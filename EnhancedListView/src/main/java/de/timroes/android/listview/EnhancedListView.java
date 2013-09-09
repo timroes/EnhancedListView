@@ -6,7 +6,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -348,6 +347,7 @@ public class EnhancedListView extends ListView {
     public EnhancedListView disableSwipeToDismiss() {
         mSwipeEnabled = false;
         mDismissCallback = null;
+        mUndoStyle = null;
         return this;
     }
 
