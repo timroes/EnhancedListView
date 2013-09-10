@@ -1,18 +1,24 @@
 package de.timroes.android.listviewdemo;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.HeaderViewListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import de.timroes.android.listview.EnhancedListView;
 
@@ -34,7 +40,7 @@ public class MainActivity extends Activity {
         mListView.addHeaderView(tv);
 
 
-        mListView.setAdapter(new ArrayAdapter<String>(this, R.layout.list_item, R.id.text,
+        mListView.setAdapter(new EnhancedListAdapter(this, R.layout.list_item, R.id.text,
                 new ArrayList<String>(Arrays.asList(new String[]{
                         "Test 1",
                         "Test 2",
@@ -47,9 +53,9 @@ public class MainActivity extends Activity {
             }
         });
 
-        mListView.enableSwipeToDismiss(EnhancedListView.UndoStyle.MULTILEVEL_POPUP, new EnhancedListView.OnDismissCallback() {
+        mListView.enableSwipeToDismiss(EnhancedListView.UndoStyle.MULTILEVEL_POPUP, new de.timroes.android.listview.EnhancedListView.OnDismissCallback() {
             @Override
-            public EnhancedListView.Undoable onDismiss(EnhancedListView listView, final int position) {
+            public de.timroes.android.listview.EnhancedListView.Undoable onDismiss(de.timroes.android.listview.EnhancedListView listView, final int position) {
 
                 final HeaderViewListAdapter headerAdapter = (HeaderViewListAdapter) listView.getAdapter();
                 final ArrayAdapter<String> adapter = (ArrayAdapter<String>) headerAdapter.getWrappedAdapter();
@@ -57,7 +63,7 @@ public class MainActivity extends Activity {
                 //final String item = (String) mListView.getAdapter().getItem(position);
                 final String item = adapter.getItem(position);
                 adapter.remove(item);
-                return new EnhancedListView.Undoable() {
+                return new de.timroes.android.listview.EnhancedListView.Undoable() {
                     @Override
                     public void undo() {
                         adapter.insert(item, position);
@@ -77,22 +83,7 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    /**
-     * This hook is called whenever an item in your options menu is selected.
-     * The default implementation simply returns false to have the normal
-     * processing happen (calling the item's Runnable or sending a message to
-     * its Handler as appropriate).  You can use this method for any items
-     * for which you would like to do processing without those other
-     * facilities.
-     * <p/>
-     * <p>Derived classes should call through to the base class for it to
-     * perform the default menu handling.</p>
-     *
-     * @param item The menu item that was selected.
-     * @return boolean Return false to allow normal menu processing to
-     * proceed, true to consume it here.
-     * @see #onCreateOptionsMenu
-     */
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item.getItemId() == R.id.action_delete) {
@@ -101,5 +92,107 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private class EnhancedListAdapter extends ArrayAdapter<String> {
+
+        /**
+         * Constructor
+         *
+         * @param context  The current context.
+         * @param resource The resource ID for a layout file containing a TextView to use when
+         *                 instantiating views.
+         */
+        public EnhancedListAdapter(Context context, int resource) {
+            super(context, resource);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param context            The current context.
+         * @param resource           The resource ID for a layout file containing a layout to use when
+         *                           instantiating views.
+         * @param textViewResourceId The id of the TextView within the layout resource to be populated
+         */
+        public EnhancedListAdapter(Context context, int resource, int textViewResourceId) {
+            super(context, resource, textViewResourceId);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param context  The current context.
+         * @param resource The resource ID for a layout file containing a TextView to use when
+         *                 instantiating views.
+         * @param objects  The objects to represent in the ListView.
+         */
+        public EnhancedListAdapter(Context context, int resource, String[] objects) {
+            super(context, resource, objects);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param context            The current context.
+         * @param resource           The resource ID for a layout file containing a layout to use when
+         *                           instantiating views.
+         * @param textViewResourceId The id of the TextView within the layout resource to be populated
+         * @param objects            The objects to represent in the ListView.
+         */
+        public EnhancedListAdapter(Context context, int resource, int textViewResourceId, String[] objects) {
+            super(context, resource, textViewResourceId, objects);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param context  The current context.
+         * @param resource The resource ID for a layout file containing a TextView to use when
+         *                 instantiating views.
+         * @param objects  The objects to represent in the ListView.
+         */
+        public EnhancedListAdapter(Context context, int resource, List<String> objects) {
+            super(context, resource, objects);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param context            The current context.
+         * @param resource           The resource ID for a layout file containing a layout to use when
+         *                           instantiating views.
+         * @param textViewResourceId The id of the TextView within the layout resource to be populated
+         * @param objects            The objects to represent in the ListView.
+         */
+        public EnhancedListAdapter(Context context, int resource, int textViewResourceId, List<String> objects) {
+            super(context, resource, textViewResourceId, objects);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+            if(convertView == null) {
+                convertView = getLayoutInflater().inflate(R.layout.list_item, parent, false);
+            }
+
+            TextView tv = (TextView) convertView.findViewById(R.id.text);
+            tv.setText(getItem(position));
+
+            Button btn = (Button)convertView.findViewById(R.id.btn);
+            final Context ctx = convertView.getContext();
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(ctx, "Clicked on button", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            return super.getView(position, convertView, parent);
+        }
     }
 }

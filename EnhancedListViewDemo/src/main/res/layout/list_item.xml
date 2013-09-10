@@ -6,9 +6,20 @@
         android:background="@color/list_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <TextView android:id="@+id/text"
         android:textAppearance="?android:textAppearanceLarge"
         android:background="@android:color/white"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"/>
+    <Button android:id="@+id/btn"
+        android:text="Click me"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent" />
+    </LinearLayout>
+
+
 </FrameLayout>
