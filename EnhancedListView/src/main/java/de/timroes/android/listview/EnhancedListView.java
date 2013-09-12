@@ -441,6 +441,12 @@ public class EnhancedListView extends ListView {
     /**
      * Delete the list item at the specified position. This will animate the item sliding out of the
      * list and then collapsing until it vanished (same as if the user slides out an item).
+     * <p>
+     * NOTE: If you are using list headers, be aware, that the position argument must take care of
+     * them. Meaning 0 references the first list header. So if you want to delete the first list
+     * item, you have to pass the number of list headers as {@code position}. Most of the times
+     * that shouldn't be a problem, since you most probably will evaluate the position which should
+     * be deleted in a way, that respects the list headers.
      *
      * @param position The position of the item in the list.
      * @throws java.lang.IndexOutOfBoundsException when trying to delete an item outside of the list range.
@@ -516,7 +522,7 @@ public class EnhancedListView extends ListView {
                 int x = (int) ev.getRawX() - listViewCoords[0];
                 int y = (int) ev.getRawY() - listViewCoords[1];
                 View child;
-                for (int i = 0; i < childCount; i++) {
+                for (int i = getHeaderViewsCount(); i < childCount; i++) {
                     child = getChildAt(i);
                     if(child != null) {
                         child.getHitRect(rect);
@@ -539,7 +545,7 @@ public class EnhancedListView extends ListView {
 
                 if (mSwipeDownView != null) {
                     mDownX = ev.getRawX();
-                    mDownPosition = getPositionForView(mSwipeDownView) - 0;
+                    mDownPosition = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
 
                     mVelocityTracker = VelocityTracker.obtain();
                     mVelocityTracker.addMovement(ev);
