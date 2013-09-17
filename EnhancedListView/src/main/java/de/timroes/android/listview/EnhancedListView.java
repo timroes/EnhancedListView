@@ -25,8 +25,6 @@ import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.view.ViewHelper;
 import com.nineoldandroids.view.ViewPropertyAnimator;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,13 +39,34 @@ public class EnhancedListView extends ListView {
 
     /**
      * Defines the style in which <i>undos</i> should be displayed and handled in the list.
+     * Pass this to {@link #setUndoStyle(de.timroes.android.listview.EnhancedListView.UndoStyle)}
+     * to change the default behavior from {@link #SINGLE_POPUP}.
      */
     public enum UndoStyle {
 
+        /**
+         * Shows a popup window, that allows the user to undo the last
+         * dismiss. If another element is deleted, the undo popup will undo that deletion.
+         * The user is only able to undo the last deletion.
+         */
         SINGLE_POPUP,
 
+        /**
+         * Shows a popup window, that allows the user to undo the last dismiss.
+         * If another item is deleted, this will be added to the chain of undos. So pressing
+         * undo will undo the last deletion, pressing it again will undo the deletion before that,
+         * and so on. As soon as the popup vanished (e.g. because {@link #setUndoHideDelay(int) autoHideDelay}
+         * is over) all saved undos will be discarded.
+         */
         MULTILEVEL_POPUP,
 
+        /**
+         * Shows a popup window, that allows the user to undo the last dismisses.
+         * If another item is deleted, while there is still an undo popup visible, the label
+         * of the button changes to <i>Undo all</i> and a press on the button, will discard
+         * all stored undos. As soon as the popup vanished (e.g. because {@link #setUndoHideDelay(int) autoHideDelay}
+         * is over) all saved undos will be discarded.
+         */
         COLLAPSED_POPUP
 
     }
@@ -58,7 +77,7 @@ public class EnhancedListView extends ListView {
      * to change the default behavior.
      * <p>
      * <b>Note:</b> This method requires the <i>Swipe to Dismiss</i> feature enabled. Use
-     * {@link #enableSwipeToDismiss(EnhancedListView.UndoStyle,EnhancedListView.OnDismissCallback)}
+     * {@link #enableSwipeToDismiss()}
      * to enable the feature.
      */
     public enum SwipeDirection {
@@ -87,8 +106,7 @@ public class EnhancedListView extends ListView {
     }
 
     /**
-     * The callback interface used by
-     * {@link EnhancedListView#enableSwipeToDismiss(EnhancedListView.UndoStyle, EnhancedListView.OnDismissCallback)}
+     * The callback interface used by {@link #setDismissCallback(EnhancedListView.OnDismissCallback)}
      * to inform its client about a successful dismissal of one or more list item positions.
      * Implement this to remove items from your adapter, that has been swiped from the list.
      */
@@ -120,14 +138,45 @@ public class EnhancedListView extends ListView {
 
     }
 
+    /**
+     * Extend this abstract class and return it from
+     * {@link EnhancedListView.OnDismissCallback#onDismiss(EnhancedListView, int)}
+     * to let the user undo the deletion you've done with your {@link EnhancedListView.OnDismissCallback}.
+     * You have at least to implement the {@link #undo()} method, and can override {@link #discard()}
+     * and {@link #getTitle()} to offer more functionality. See the README file for example implementations.
+     */
     public abstract static class Undoable {
 
+        /**
+         * This method must undo the deletion you've done in
+         * {@link EnhancedListView.OnDismissCallback#onDismiss(EnhancedListView, int)} and reinsert
+         * the element into the adapter.
+         * <p>
+         * In the most implementations, you will only remove the list item from your adapter
+         * in the {@code onDismiss} method and delete it from the database (or your permanent
+         * storage) in {@link #discard()}. In that case you only need to reinsert the item
+         * to the adapter.
+         */
         public abstract void undo();
 
+        /**
+         * Returns the individual undo message for this undo. This will be displayed in the undo
+         * window, beside the undo button. The default implementation returns {@code null},
+         * what will lead in a default message to be displayed in the undo window.
+         * Don't call the super method, when overriding this method.
+         *
+         * @return The title for a special string.
+         */
         public String getTitle() {
             return null;
         }
 
+        /**
+         * Discard the undo, meaning the user has no longer the possibility to undo the deletion.
+         * Implement this, to finally delete your stuff from permanent storages like databases
+         * (whereas in {@link de.timroes.android.listview.EnhancedListView.OnDismissCallback#onKeyDown(int, android.view.KeyEvent)}
+         * you should only remove it from the list adapter).
+         */
         public void discard() { }
 
     }
@@ -285,6 +334,29 @@ public class EnhancedListView extends ListView {
         mAnimationTime = ctx.getResources().getInteger(
                 android.R.integer.config_shortAnimTime);
 
+        // Initialize undo popup
+        LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View undoView = inflater.inflate(R.layout.undo_popup, null);
+        mUndoButton = (Button)undoView.findViewById(R.id.undo);
+        mUndoButton.setOnClickListener(new UndoClickListener());
+        mUndoButton.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // If the user touches the screen invalidate the current running delay by incrementing
+                // the valid message id. So this delay won't hide the undo popup anymore
+                mValidDelayedMsgId++;
+                return false;
+            }
+        });
+        mUndoPopupTextView = (TextView)undoView.findViewById(R.id.text);
+
+        mUndoPopup = new PopupWindow(undoView);
+        mUndoPopup.setAnimationStyle(R.style.fade_animation);
+
+        mScreenDensity = getResources().getDisplayMetrics().density;
+        mUndoPopup.setHeight((int)(mScreenDensity * 56));
+        // END initialize undo popup
+
         setOnScrollListener(makeScrollListener());
 
     }
@@ -299,42 +371,18 @@ public class EnhancedListView extends ListView {
      * Return {@code null}, if you don't want the <i>undo</i> feature enabled. Read the README file
      * or the demo project for more detailed samples.
      *
-     * @param dismissCallback The callback used when deleting items.
      * @return The {@link de.timroes.android.listview.EnhancedListView}
+     * @throws java.lang.IllegalStateException when you haven't passed an {@link EnhancedListView.OnDismissCallback}
+     *      to {@link #setDismissCallback(EnhancedListView.OnDismissCallback)} before calling this
+     *      method.
      */
-    public EnhancedListView enableSwipeToDismiss(UndoStyle undoStyle, OnDismissCallback dismissCallback) {
-        mSwipeEnabled = true;
-        mDismissCallback = dismissCallback;
-        mUndoStyle = undoStyle;
+    public EnhancedListView enableSwipeToDismiss() {
 
-        if(mUndoStyle == UndoStyle.SINGLE_POPUP
-                || mUndoStyle == UndoStyle.MULTILEVEL_POPUP
-                || mUndoStyle == UndoStyle.COLLAPSED_POPUP) {
-
-            // Initialize undo popup
-            LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View undoView = inflater.inflate(R.layout.undo_popup, null);
-            mUndoButton = (Button)undoView.findViewById(R.id.undo);
-            mUndoButton.setOnClickListener(new UndoClickListener());
-            mUndoButton.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    // If the user touches the screen invalidate the current running delay by incrementing
-                    // the valid message id. So this delay won't hide the undo popup anymore
-                    mValidDelayedMsgId++;
-                    return false;
-                }
-            });
-            mUndoPopupTextView = (TextView)undoView.findViewById(R.id.text);
-
-            mUndoPopup = new PopupWindow(undoView);
-            mUndoPopup.setAnimationStyle(R.style.fade_animation);
-
-            mScreenDensity = getResources().getDisplayMetrics().density;
-            mUndoPopup.setHeight((int)(mScreenDensity * 56));
-            // END initialize undo popup
-
+        if(mDismissCallback == null) {
+            throw new IllegalStateException("You must pass an OnDismissCallback to the list before enabling Swipe to Dismiss.");
         }
+
+        mSwipeEnabled = true;
 
         return this;
     }
@@ -352,14 +400,37 @@ public class EnhancedListView extends ListView {
     }
 
     /**
+     * Sets the callback to be called when the user dismissed an item from the list (either by
+     * swiping it out - with <i>Swipe to Dismiss</i> enabled - or by deleting it with
+     * {@link #delete(int)}). You must call this, before you call {@link #delete(int)} or
+     * {@link #enableSwipeToDismiss()} otherwise you will get an {@link java.lang.IllegalStateException}.
+     *
+     * @param dismissCallback The callback used to handle dismisses of list items.
+     * @return This {@link de.timroes.android.listview.EnhancedListView}
+     */
+    public EnhancedListView setDismissCallback(OnDismissCallback dismissCallback) {
+        mDismissCallback = dismissCallback;
+        return this;
+    }
+
+    /**
+     * Sets the undo style of this list. See the javadoc of {@link de.timroes.android.listview.EnhancedListView.UndoStyle}
+     * for a detailed explanation of the different styles. The default style (if you never call this
+     * method) is {@link de.timroes.android.listview.EnhancedListView.UndoStyle#SINGLE_POPUP}.
+     *
+     * @param undoStyle The style of this listview.
+     * @return This {@link de.timroes.android.listview.EnhancedListView}
+     */
+    public EnhancedListView setUndoStyle(UndoStyle undoStyle) {
+        mUndoStyle = undoStyle;
+        return this;
+    }
+
+    /**
      * Sets the time in milliseconds after which the undo popup automatically disappears.
      * The countdown will start when the user touches the screen. If you want to start the countdown
      * immediately when the popups appears, call {@link #setRequireTouchBeforeDismiss(boolean)} with
      * {@code false}.
-     * <p>
-     * <b>Note:</b> This method requires the <i>Swipe to Dismiss</i> feature enabled. Use
-     * {@link #enableSwipeToDismiss(EnhancedListView.UndoStyle,EnhancedListView.OnDismissCallback)}
-     * to enable the feature.
      *
      * @param hideDelay The delay in milliseconds.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
@@ -372,10 +443,6 @@ public class EnhancedListView extends ListView {
     /**
      * Sets whether another touch on the view is required before the popup counts down to dismiss
      * the undo popup. By default this is set to {@code true}.
-     * <p>
-     * <b>Note:</b> This method requires the <i>Swipe to Dismiss</i> feature enabled. Use
-     * {@link #enableSwipeToDismiss(EnhancedListView.UndoStyle,EnhancedListView.OnDismissCallback)}}
-     * to enable the feature.
      *
      * @param touchBeforeDismiss Whether the screen needs to be touched before the countdown starts.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
@@ -393,8 +460,7 @@ public class EnhancedListView extends ListView {
      * can be swiped into both directions.
      * <p>
      * <b>Note:</b> This method requires the <i>Swipe to Dismiss</i> feature enabled. Use
-     * {@link #enableSwipeToDismiss(EnhancedListView.UndoStyle,EnhancedListView.OnDismissCallback)}
-     * to enable the feature.
+     * {@link #enableSwipeToDismiss()} to enable the feature.
      *
      * @param direction The direction to which the swipe should be limited.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
@@ -413,8 +479,7 @@ public class EnhancedListView extends ListView {
      * is no view in a list item, with the given id, the whole view will be swiped.
      * <p>
      * <b>Note:</b> This method requires the <i>Swipe to Dismiss</i> feature enabled. Use
-     * {@link #enableSwipeToDismiss(EnhancedListView.UndoStyle,EnhancedListView.OnDismissCallback)}
-     * to enable the feature.
+     * {@link #enableSwipeToDismiss()} to enable the feature.
      *
      * @param swipingLayoutId The id (from R.id) of the view, that should be swiped.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
@@ -426,7 +491,7 @@ public class EnhancedListView extends ListView {
 
     /**
      * Discard all stored undos and hide the undo popup dialog.
-     * This method should be called in {@link android.app.Activity#onStop()}. Otherwise
+     * This method must be called in {@link android.app.Activity#onStop()}. Otherwise
      * {@link EnhancedListView.Undoable#discard()} might not be called for several items, what might
      * break your data consistency.
      */
@@ -450,8 +515,13 @@ public class EnhancedListView extends ListView {
      *
      * @param position The position of the item in the list.
      * @throws java.lang.IndexOutOfBoundsException when trying to delete an item outside of the list range.
+     * @throws java.lang.IllegalStateException when this method is called before an {@link EnhancedListView.OnDismissCallback}
+     *      is set via {@link #setDismissCallback(de.timroes.android.listview.EnhancedListView.OnDismissCallback)}.
      * */
     public void delete(int position) {
+        if(mDismissCallback == null) {
+            throw new IllegalStateException("You must set an OnDismissCallback, before deleting items.");
+        }
         if(position < 0 || position >= getCount()) {
             throw new IndexOutOfBoundsException(String.format("Tried to delete item %d. #items in list: %d", position, getCount()));
         }
@@ -490,7 +560,7 @@ public class EnhancedListView extends ListView {
     }
 
     @Override
-    public boolean onTouchEvent(@NotNull MotionEvent ev) {
+    public boolean onTouchEvent(MotionEvent ev) {
 
         if (!mSwipeEnabled) {
             return super.onTouchEvent(ev);
