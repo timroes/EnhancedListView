@@ -1,79 +1,221 @@
 package de.timroes.android.listviewdemo;
 
-import android.app.Activity;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.HeaderViewListAdapter;
+import android.widget.BaseAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import de.timroes.android.listview.EnhancedListView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ActionBarActivity {
 
+    private enum ControlGroup {
+        SWIPE_TO_DIMISS
+    }
+
+    private static final String PREF_UNDO_STYLE = "de.timroes.android.listviewdemo.UNDO_STYLE";
+    private static final String PREF_SWIPE_TO_DISMISS = "de.timroes.android.listviewdemo.SWIPE_TO_DIMISS";
+    private static final String PREF_SWIPE_DIRECTION = "de.timroes.android.listviewdemo.SWIPE_DIRECTION";
+    private static final String PREF_SWIPE_LAYOUT = "de.timroes.android.listviewdemo.SWIPE_LAYOUT";
+
+    private EnhancedListAdapter mAdapter;
     private EnhancedListView mListView;
+    private DrawerLayout mDrawerLayout;
+
+    private Bundle mUndoStylePref;
+    private Bundle mSwipeDirectionPref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mListView = (EnhancedListView)findViewById(R.id.list);
 
-        TextView tv = new TextView(this);
-        tv.setText("Header View 1");
-        mListView.addHeaderView(tv);
-        tv = new TextView(this);
-        tv.setText("Header View 2");
-        mListView.addHeaderView(tv);
-
-
-        mListView.setAdapter(new EnhancedListAdapter(this, R.layout.list_item, R.id.text,
-                new ArrayList<String>(Arrays.asList(new String[]{
-                        "Test 1",
-                        "Test 2",
-                        "Test 3", "Test 4", "Test 5", "Test 6"
-                }))));
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
+        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "Touched item " + parent.getAdapter().getItem(position).toString(), Toast.LENGTH_SHORT).show();
+            public void onDrawerSlide(View view, float v) { }
+
+            @Override
+            public void onDrawerOpened(View view) {
+                mListView.discardUndo();
+                supportInvalidateOptionsMenu();
             }
+
+            @Override
+            public void onDrawerClosed(View view) {
+                supportInvalidateOptionsMenu();
+                applySettings();
+            }
+
+            @Override
+            public void onDrawerStateChanged(int i) { }
+
         });
 
-        mListView.enableSwipeToDismiss(EnhancedListView.UndoStyle.MULTILEVEL_POPUP, new de.timroes.android.listview.EnhancedListView.OnDismissCallback() {
+        mListView = (EnhancedListView)findViewById(R.id.list);
+
+        mAdapter = new EnhancedListAdapter();
+        mAdapter.resetItems();
+
+        mListView.setAdapter(mAdapter);
+
+        CheckBox swipeToDismiss = (CheckBox) findViewById(R.id.pref_swipetodismiss);
+        swipeToDismiss.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public de.timroes.android.listview.EnhancedListView.Undoable onDismiss(de.timroes.android.listview.EnhancedListView listView, final int position) {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                getPreferences(MODE_PRIVATE).edit().putBoolean(PREF_SWIPE_TO_DISMISS, isChecked).commit();
+                enableControlGroup(ControlGroup.SWIPE_TO_DIMISS, isChecked);
+            }
+        });
+        swipeToDismiss.setChecked(getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
 
-                final HeaderViewListAdapter headerAdapter = (HeaderViewListAdapter) listView.getAdapter();
-                final ArrayAdapter<String> adapter = (ArrayAdapter<String>) headerAdapter.getWrappedAdapter();
+        CheckBox swipeLayout = (CheckBox) findViewById(R.id.pref_swipelayout);
+        swipeLayout.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                getPreferences(MODE_PRIVATE).edit().putBoolean(PREF_SWIPE_LAYOUT, isChecked).commit();
+            }
+        });
+        swipeLayout.setChecked(getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_LAYOUT, false));
 
-                //final String item = (String) mListView.getAdapter().getItem(position);
-                final String item = adapter.getItem(position);
-                adapter.remove(item);
-                return new de.timroes.android.listview.EnhancedListView.Undoable() {
+        mUndoStylePref = new Bundle();
+        mUndoStylePref.putInt(DialogPicker.DIALOG_TITLE, R.string.pref_undo_style_title);
+        mUndoStylePref.putInt(DialogPicker.DIALOG_ITEMS_ID, R.array.undo_style);
+        mUndoStylePref.putString(DialogPicker.DIALOG_PREF_KEY, PREF_UNDO_STYLE);
+
+        mSwipeDirectionPref = new Bundle();
+        mSwipeDirectionPref.putInt(DialogPicker.DIALOG_TITLE, R.string.pref_swipe_direction_title);
+        mSwipeDirectionPref.putInt(DialogPicker.DIALOG_ITEMS_ID, R.array.swipe_direction);
+        mSwipeDirectionPref.putString(DialogPicker.DIALOG_PREF_KEY, PREF_SWIPE_DIRECTION);
+
+        enableControlGroup(ControlGroup.SWIPE_TO_DIMISS, getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
+
+        // Set the callback that handles dismisses.
+        mListView.setDismissCallback(new de.timroes.android.listview.EnhancedListView.OnDismissCallback() {
+            /**
+             * This method will be called when the user swiped a way or deleted it via
+             * {@link de.timroes.android.listview.EnhancedListView#delete(int)}.
+             *
+             * @param listView The {@link EnhancedListView} the item has been deleted from.
+             * @param position The position of the item to delete from your adapter.
+             * @return An {@link de.timroes.android.listview.EnhancedListView.Undoable}, if you want
+             *      to give the user the possibility to undo the deletion.
+             */
+            @Override
+            public EnhancedListView.Undoable onDismiss(EnhancedListView listView, final int position) {
+
+                final String item = (String) mAdapter.getItem(position);
+                mAdapter.remove(position);
+                return new EnhancedListView.Undoable() {
                     @Override
                     public void undo() {
-                        adapter.insert(item, position);
+                        mAdapter.insert(position, item);
                     }
                 };
             }
         });
 
-        //mListView.setSwipingLayout(R.id.text);
+        // Show toast message on click and long click on list items.
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(MainActivity.this, "Clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+            }
+        });
+        mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(MainActivity.this, "Long clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
 
+        mListView.setSwipingLayout(R.id.swiping_layout);
+
+        applySettings();
+
+    }
+
+    /**
+     * Enables or disables a group of widgets in the settings drawer.
+     *
+     * @param group The Group that should be disabled/enabled.
+     * @param enabled Whether the group should be enabled or not.
+     */
+    private void enableControlGroup(ControlGroup group, boolean enabled) {
+        switch(group) {
+            case SWIPE_TO_DIMISS:
+                findViewById(R.id.pref_swipedirection).setEnabled(enabled);
+                findViewById(R.id.pref_swipelayout).setEnabled(enabled);
+                break;
+        }
+    }
+
+    /**
+     * Applies the settings the user has made to the list view.
+     */
+    private void applySettings() {
+
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+
+        // Set the UndoStyle, the user selected.
+        EnhancedListView.UndoStyle style;
+        switch(prefs.getInt(PREF_UNDO_STYLE, 0)) {
+            default: style = EnhancedListView.UndoStyle.SINGLE_POPUP; break;
+            case 1: style = EnhancedListView.UndoStyle.MULTILEVEL_POPUP; break;
+            case 2: style = EnhancedListView.UndoStyle.COLLAPSED_POPUP; break;
+        }
+        mListView.setUndoStyle(style);
+
+        // Enable or disable Swipe to Dismiss
+        if(prefs.getBoolean(PREF_SWIPE_TO_DISMISS, false)) {
+            mListView.enableSwipeToDismiss();
+
+            // Set the swipe direction
+            EnhancedListView.SwipeDirection direction;
+            switch(prefs.getInt(PREF_SWIPE_DIRECTION, 0)) {
+                default: direction = EnhancedListView.SwipeDirection.BOTH; break;
+                case 1: direction = EnhancedListView.SwipeDirection.START; break;
+                case 2: direction = EnhancedListView.SwipeDirection.END; break;
+            }
+            mListView.setSwipeDirection(direction);
+
+            // Enable or disable swiping layout feature
+            mListView.setSwipingLayout(prefs.getBoolean(PREF_SWIPE_LAYOUT, false)
+                    ? R.id.swiping_layout : 0);
+
+        } else {
+            mListView.disableSwipeToDismiss();
+        }
+
+    }
+
+    @Override
+    protected void onStop() {
+        if(mListView != null) {
+            mListView.discardUndo();
+        }
+        super.onStop();
     }
 
     @Override
@@ -83,116 +225,188 @@ public class MainActivity extends Activity {
         return true;
     }
 
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+
+        boolean drawer = mDrawerLayout.isDrawerVisible(Gravity.RIGHT);
+
+        menu.findItem(R.id.action_settings).setVisible(!drawer);
+        menu.findItem(R.id.action_done).setVisible(drawer);
+
+        return super.onPrepareOptionsMenu(menu);
+
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId() == R.id.action_delete) {
-            mListView.delete(1);
-            mListView.delete(2);
-            return true;
+        switch(item.getItemId()) {
+            case R.id.action_settings:
+                mDrawerLayout.openDrawer(Gravity.RIGHT);
+                return true;
+            case R.id.action_done:
+                mDrawerLayout.closeDrawers();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private class EnhancedListAdapter extends ArrayAdapter<String> {
+    public void resetItems(View view) {
+        mListView.discardUndo();
+        mAdapter.resetItems();
+        mDrawerLayout.closeDrawers();
+    }
 
-        /**
-         * Constructor
-         *
-         * @param context  The current context.
-         * @param resource The resource ID for a layout file containing a TextView to use when
-         *                 instantiating views.
-         */
-        public EnhancedListAdapter(Context context, int resource) {
-            super(context, resource);
+    public void selectUndoStyle(View view) {
+        DialogPicker picker = new DialogPicker();
+        picker.setArguments(mUndoStylePref);
+        picker.show(getSupportFragmentManager(), "UNDO_STYLE_PICKER");
+    }
+
+    public void selectSwipeDirection(View view) {
+        DialogPicker picker = new DialogPicker();
+        picker.setArguments(mSwipeDirectionPref);
+        picker.show(getSupportFragmentManager(), "SWIPE_DIR_PICKER");
+    }
+
+    private class EnhancedListAdapter extends BaseAdapter {
+
+        private List<String> mItems = new ArrayList<String>();
+
+        void resetItems() {
+            mItems.clear();
+            for(int i = 1; i <= 40; i++) {
+                mItems.add("Item " + i);
+            }
+            notifyDataSetChanged();
+        }
+
+        public void remove(int position) {
+            mItems.remove(position);
+            notifyDataSetChanged();
+        }
+
+        public void insert(int position, String item) {
+            mItems.add(position, item);
+            notifyDataSetChanged();
         }
 
         /**
-         * Constructor
+         * How many items are in the data set represented by this Adapter.
          *
-         * @param context            The current context.
-         * @param resource           The resource ID for a layout file containing a layout to use when
-         *                           instantiating views.
-         * @param textViewResourceId The id of the TextView within the layout resource to be populated
+         * @return Count of items.
          */
-        public EnhancedListAdapter(Context context, int resource, int textViewResourceId) {
-            super(context, resource, textViewResourceId);
+        @Override
+        public int getCount() {
+            return mItems.size();
         }
 
         /**
-         * Constructor
+         * Get the data item associated with the specified position in the data set.
          *
-         * @param context  The current context.
-         * @param resource The resource ID for a layout file containing a TextView to use when
-         *                 instantiating views.
-         * @param objects  The objects to represent in the ListView.
+         * @param position Position of the item whose data we want within the adapter's
+         *                 data set.
+         * @return The data at the specified position.
          */
-        public EnhancedListAdapter(Context context, int resource, String[] objects) {
-            super(context, resource, objects);
+        @Override
+        public Object getItem(int position) {
+            return mItems.get(position);
         }
 
         /**
-         * Constructor
+         * Get the row id associated with the specified position in the list.
          *
-         * @param context            The current context.
-         * @param resource           The resource ID for a layout file containing a layout to use when
-         *                           instantiating views.
-         * @param textViewResourceId The id of the TextView within the layout resource to be populated
-         * @param objects            The objects to represent in the ListView.
+         * @param position The position of the item within the adapter's data set whose row id we want.
+        * @return The id of the item at the specified position.
          */
-        public EnhancedListAdapter(Context context, int resource, int textViewResourceId, String[] objects) {
-            super(context, resource, textViewResourceId, objects);
+        @Override
+        public long getItemId(int position) {
+            return position;
         }
 
         /**
-         * Constructor
+         * Get a View that displays the data at the specified position in the data set. You can either
+         * create a View manually or inflate it from an XML layout file. When the View is inflated, the
+         * parent View (GridView, ListView...) will apply default layout parameters unless you use
+         * {@link android.view.LayoutInflater#inflate(int, android.view.ViewGroup, boolean)}
+         * to specify a root view and to prevent attachment to the root.
          *
-         * @param context  The current context.
-         * @param resource The resource ID for a layout file containing a TextView to use when
-         *                 instantiating views.
-         * @param objects  The objects to represent in the ListView.
+         * @param position    The position of the item within the adapter's data set of the item whose view
+         *                    we want.
+         * @param convertView The old view to reuse, if possible. Note: You should check that this view
+         *                    is non-null and of an appropriate type before using. If it is not possible to convert
+         *                    this view to display the correct data, this method can create a new view.
+         *                    Heterogeneous lists can specify their number of view types, so that this View is
+         *                    always of the right type (see {@link #getViewTypeCount()} and
+         *                    {@link #getItemViewType(int)}).
+         * @param parent      The parent that this view will eventually be attached to
+         * @return A View corresponding to the data at the specified position.
          */
-        public EnhancedListAdapter(Context context, int resource, List<String> objects) {
-            super(context, resource, objects);
-        }
-
-        /**
-         * Constructor
-         *
-         * @param context            The current context.
-         * @param resource           The resource ID for a layout file containing a layout to use when
-         *                           instantiating views.
-         * @param textViewResourceId The id of the TextView within the layout resource to be populated
-         * @param objects            The objects to represent in the ListView.
-         */
-        public EnhancedListAdapter(Context context, int resource, int textViewResourceId, List<String> objects) {
-            super(context, resource, textViewResourceId, objects);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Nullable
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
 
+            ViewHolder holder;
             if(convertView == null) {
                 convertView = getLayoutInflater().inflate(R.layout.list_item, parent, false);
+                // Clicking the delete icon, will read the position of the item stored in
+                // the tag and delete it from the list. So we don't need to generate a new
+                // onClickListener every time the content of this view changes.
+                final View origView = convertView;
+                convertView.findViewById(R.id.action_delete).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mListView.delete(((ViewHolder)origView.getTag()).position);
+                    }
+                });
+
+                holder = new ViewHolder();
+                assert convertView != null;
+                holder.mTextView = (TextView) convertView.findViewById(R.id.text);
+
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
             }
 
-            TextView tv = (TextView) convertView.findViewById(R.id.text);
-            tv.setText(getItem(position));
+            holder.position = position;
+            holder.mTextView.setText(mItems.get(position));
 
-            Button btn = (Button)convertView.findViewById(R.id.btn);
-            final Context ctx = convertView.getContext();
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Toast.makeText(ctx, "Clicked on button", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            return super.getView(position, convertView, parent);
+            return convertView;
         }
+
+        private class ViewHolder {
+            TextView mTextView;
+            int position;
+        }
+
+    }
+
+    private class DialogPicker extends DialogFragment {
+
+        final static String DIALOG_TITLE = "dialog_title";
+        final static String DIALOG_ITEMS_ID = "items_id";
+        final static String DIALOG_PREF_KEY = "pref_key";
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final Bundle args = getArguments();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(args.getInt(DIALOG_TITLE));
+            builder.setSingleChoiceItems(
+                args.getInt(DIALOG_ITEMS_ID),
+                getPreferences(MODE_PRIVATE).getInt(args.getString(DIALOG_PREF_KEY), 0),
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+                            prefs.edit().putInt(args.getString(DIALOG_PREF_KEY), which).commit();
+                            dialog.dismiss();
+                        }
+                    }
+            );
+
+            return builder.create();
+        }
+
     }
 }

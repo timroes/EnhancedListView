@@ -2,24 +2,33 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="48dp">
-    <View
+    <TextView
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:gravity="center_vertical"
+        android:textColor="@android:color/white"
         android:background="@color/list_bg"
+        android:text="@string/list_item_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-    <LinearLayout android:orientation="horizontal"
+    <RelativeLayout android:id="@+id/swiping_layout"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="@android:color/white"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-    <TextView android:id="@+id/text"
-        android:textAppearance="?android:textAppearanceLarge"
-        android:background="@android:color/white"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"/>
-    <Button android:id="@+id/btn"
-        android:text="Click me"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent" />
-    </LinearLayout>
-
-
+        <TextView android:id="@+id/text"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:textAppearance="?android:textAppearanceLarge"
+            android:background="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <ImageButton android:id="@+id/action_delete"
+            android:background="?selectableItemBackground"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_action_delete"
+            android:layout_width="48dp"
+            android:layout_height="match_parent" />
+    </RelativeLayout>
 </FrameLayout>

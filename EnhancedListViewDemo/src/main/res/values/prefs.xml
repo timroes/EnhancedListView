@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="undo_style">
+        <item>Single Undo</item>
+        <item>Multilevel Undo</item>
+        <item>Collapsed Undo</item>
+    </string-array>
+
+    <string-array name="swipe_direction">
+        <item>Both directions</item>
+        <item>Left (Start)</item>
+        <item>Right (End)</item>
+    </string-array>
+</resources>

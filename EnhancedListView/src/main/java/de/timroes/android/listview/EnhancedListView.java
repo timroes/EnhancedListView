@@ -394,8 +394,6 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView disableSwipeToDismiss() {
         mSwipeEnabled = false;
-        mDismissCallback = null;
-        mUndoStyle = null;
         return this;
     }
 
