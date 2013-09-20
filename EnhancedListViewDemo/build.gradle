@@ -21,18 +21,20 @@ android {
         targetSdkVersion 18
     }
 
-    signingConfigs {
-        release {
-            storeFile file(System.properties["user.home"] + "/.keystores/de-timroes-android-listview.keystore")
-            storePassword listviewKeyPassword
-            keyAlias "EnhancedListView"
-            keyPassword listviewKeyPassword
+    if(project.hasProperty('listviewKeyPassword')) {
+        signingConfigs {
+            release {
+                storeFile file(System.properties["user.home"] + "/.keystores/de-timroes-android-listview.keystore")
+                storePassword listviewKeyPassword
+                keyAlias "EnhancedListView"
+                keyPassword listviewKeyPassword
+            }
         }
-    }
 
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
+        buildTypes {
+            release {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
