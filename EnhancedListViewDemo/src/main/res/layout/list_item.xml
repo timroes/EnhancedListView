@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:descendantFocusability="blocksDescendants"
     android:layout_height="48dp">
     <TextView
         android:paddingLeft="16dp"
@@ -11,24 +12,28 @@
         android:text="@string/list_item_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-    <RelativeLayout android:id="@+id/swiping_layout"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
+    <FrameLayout android:id="@+id/swiping_layout"
         android:background="@android:color/white"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <TextView android:id="@+id/text"
-            android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
-            android:textAppearance="?android:textAppearanceLarge"
-            android:background="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-        <ImageButton android:id="@+id/action_delete"
+        <RelativeLayout
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
             android:background="?selectableItemBackground"
-            android:layout_alignParentRight="true"
-            android:src="@drawable/ic_action_delete"
-            android:layout_width="48dp"
-            android:layout_height="match_parent" />
-    </RelativeLayout>
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView android:id="@+id/text"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:textAppearance="?android:textAppearanceLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <ImageButton android:id="@+id/action_delete"
+                android:background="?selectableItemBackground"
+                android:layout_alignParentRight="true"
+                android:src="@drawable/ic_action_delete"
+                android:layout_width="48dp"
+                android:layout_height="match_parent" />
+        </RelativeLayout>
+    </FrameLayout>
 </FrameLayout>

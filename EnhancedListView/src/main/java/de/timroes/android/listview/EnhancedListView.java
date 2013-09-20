@@ -32,6 +32,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
+ * A {@link android.widget.ListView} offering enhanced features like Swipe To Dismiss and an
+ * undo functionality. See the documentation on GitHub for more information.
  *
  * @author Tim Roes <mail@timroes.de>
  */
@@ -523,7 +525,7 @@ public class EnhancedListView extends ListView {
         if(position < 0 || position >= getCount()) {
             throw new IndexOutOfBoundsException(String.format("Tried to delete item %d. #items in list: %d", position, getCount()));
         }
-        View childView = getChildAt(position);
+        View childView = getChildAt(position - getFirstVisiblePosition());
         View view = null;
         if(mSwipingLayout > 0) {
             view = childView.findViewById(mSwipingLayout);

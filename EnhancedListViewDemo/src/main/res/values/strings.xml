@@ -14,7 +14,7 @@
     <string name="pref_general">General</string>
     <string name="pref_swipe_to_dismiss">Swipe to Dismiss</string>
     <string name="enable">Enabled</string>
-    <string name="list_item_background">Don\'t swipe whole list item</string>
+    <string name="list_item_background">Sticky part of list item</string>
     <string name="pref_swipelayout">Swipe Layout</string>
 
 </resources>

@@ -19,10 +19,73 @@ dependencies {
 
 android {
     compileSdkVersion 18
-    buildToolsVersion "18.0.1"
+    buildToolsVersion "18.1"
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 18
     }
+}
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+version = "0.1.0"
+group = "de.timroes.android"
+
+configurations {
+    archives {
+        extendsFrom configurations.default
+    }
+}
+
+signing {
+    required { has("release") && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+uploadArchives {
+
+    configuration = configurations.archives
+    repositories.mavenDeployer {
+
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+        repository(url: sonatypeRepo) {
+            authentication(userName: sonatypeUsername, password: sonatypePassword )
+        }
+
+        pom.project {
+
+            name 'EnhancedListView'
+            packaging 'aar'
+            description 'ListView with enhanced features for Android'
+            url 'https://github.com/timroes/EnhancedListView'
+
+            scm {
+                url 'scm:git@github.com:timroes/EnhancedListView.git'
+                connection 'scm:git@github.com:timroes/EnhancedListView.git'
+                developerConnection  'scm:git@github.com:timroes/EnhancedListView.git'
+            }
+
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+
+            developers {
+                developer {
+                    id 'timroes'
+                    name 'Tim Roes'
+                    email 'mail@timroes.de'
+                }
+            }
+
+        }
+
+    }
+
 }
