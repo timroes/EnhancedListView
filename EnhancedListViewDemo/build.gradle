@@ -8,10 +8,6 @@ buildscript {
 }
 apply plugin: 'android'
 
-repositories {
-    mavenCentral()
-}
-
 android {
     compileSdkVersion 18
     buildToolsVersion "18.1"
@@ -21,23 +17,18 @@ android {
         targetSdkVersion 18
     }
 
-    if(project.hasProperty('listviewKeyPassword')) {
-        signingConfigs {
-            release {
-                storeFile file(System.properties["user.home"] + "/.keystores/de-timroes-android-listview.keystore")
-                storePassword listviewKeyPassword
-                keyAlias "EnhancedListView"
-                keyPassword listviewKeyPassword
-            }
-        }
+}
 
-        buildTypes {
-            release {
-                signingConfig signingConfigs.release
-            }
-        }
-    }
+// If user has set EnhancedListView.signing in her gradle.properties
+// file and the path + ".gradle" exists, this script will be included.
+// Used to import signing config.
+if(project.hasProperty('EnhancedListView.signing')
+		&& new File(project.property('EnhancedListView.signing') + ".gradle").exists()) {
+	apply from: project.property('EnhancedListView.signing') + ".gradle";
+}
 
+repositories {
+    mavenCentral()
 }
 
 dependencies {
