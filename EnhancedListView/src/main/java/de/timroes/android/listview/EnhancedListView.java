@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -27,6 +28,7 @@ import com.nineoldandroids.view.ViewPropertyAnimator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -273,6 +275,8 @@ public class EnhancedListView extends ListView {
     private int mMaxFlingVelocity;
     private long mAnimationTime;
 
+    private final Object[] mAnimationLock = new Object[0];
+
     // Swipe-To-Dismiss
     private boolean mSwipeEnabled;
     private OnDismissCallback mDismissCallback;
@@ -284,6 +288,8 @@ public class EnhancedListView extends ListView {
 
     private List<Undoable> mUndoActions = new ArrayList<Undoable>();
     private SortedSet<PendingDismissData> mPendingDismisses = new TreeSet<PendingDismissData>();
+    private List<View> mAnimatedViews = new LinkedList<View>();
+    private int mDismissAnimationRefCount;
 
     private boolean mSwipePaused;
     private boolean mSwiping;
@@ -294,7 +300,6 @@ public class EnhancedListView extends ListView {
     private VelocityTracker mVelocityTracker;
     private float mDownX;
     private int mDownPosition;
-    private int mDismissAnimationRefCount;
     private float mScreenDensity;
 
     private PopupWindow mUndoPopup;
@@ -546,7 +551,16 @@ public class EnhancedListView extends ListView {
      * @param toRightSide Whether it should slide out to the right side.
      */
     private void slideOutView(final View view, final View childView, final int position, boolean toRightSide) {
-        ++mDismissAnimationRefCount;
+
+        // Only start new animation, if this view isn't already animated (too fast swiping bug)
+        synchronized(mAnimationLock) {
+            if(mAnimatedViews.contains(view)) {
+                return;
+            }
+            ++mDismissAnimationRefCount;
+            mAnimatedViews.add(view);
+        }
+
         ViewPropertyAnimator.animate(view)
                 .translationX(toRightSide ? mViewWidth : -mViewWidth)
                 .alpha(0)
@@ -716,13 +730,6 @@ public class EnhancedListView extends ListView {
      */
     private void performDismiss(final View dismissView, final View listItemView, final int dismissPosition) {
 
-        // Don't start an animation if there is already an animation running on this view.
-        for(PendingDismissData data : mPendingDismisses) {
-            if(data.childView == listItemView) {
-                return;
-            }
-        }
-
         final ViewGroup.LayoutParams lp = listItemView.getLayoutParams();
         final int originalHeight = listItemView.getHeight();
 
@@ -731,8 +738,16 @@ public class EnhancedListView extends ListView {
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                --mDismissAnimationRefCount;
-                if (mDismissAnimationRefCount == 0) {
+
+                // Make sure no other animation is running. Remove animation from running list, that just finished
+                boolean noAnimationLeft;
+                synchronized(mAnimationLock) {
+                    --mDismissAnimationRefCount;
+                    mAnimatedViews.remove(dismissView);
+                    noAnimationLeft = mDismissAnimationRefCount == 0;
+                }
+
+                if (noAnimationLeft) {
                     // No active animations, process all pending dismisses.
 
                     for(PendingDismissData dismiss : mPendingDismisses) {
@@ -769,14 +784,8 @@ public class EnhancedListView extends ListView {
 
                     ViewGroup.LayoutParams lp;
                     for (PendingDismissData pendingDismiss : mPendingDismisses) {
-                        // Reset view presentation
-                      //  ViewHelper.setAlpha(pendingDismiss.childView, 1f);
-                       // ViewHelper.setTranslationX(pendingDismiss.childView, 0);
-                        // Reset view that got swiped (if not the whole item got swiped)
-                       // if(pendingDismiss.view != null) {
-                            ViewHelper.setAlpha(pendingDismiss.view, 1f);
-                            ViewHelper.setTranslationX(pendingDismiss.view, 0);
-                       // }
+                        ViewHelper.setAlpha(pendingDismiss.view, 1f);
+                        ViewHelper.setTranslationX(pendingDismiss.view, 0);
                         lp = pendingDismiss.childView.getLayoutParams();
                         lp.height = originalHeight;
                         pendingDismiss.childView.setLayoutParams(lp);
