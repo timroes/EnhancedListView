@@ -662,8 +662,8 @@ public class EnhancedListView extends ListView {
                 if (dismiss) {
                     // dismiss
                     slideOutView(mSwipeDownView, mSwipeDownChild, mDownPosition, dismissRight);
-                } else {
-                    // cancel
+                } else if(mSwiping) {
+                    // Swipe back to regular position
                     ViewPropertyAnimator.animate(mSwipeDownView)
                             .translationX(0)
                             .alpha(1)
