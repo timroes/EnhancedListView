@@ -30,7 +30,7 @@ android {
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "0.1.0"
+version = "0.1.1"
 group = "de.timroes.android"
 
 configurations {
@@ -39,12 +39,24 @@ configurations {
     }
 }
 
-signing {
-    required { has("release") && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
+if(project.hasProperty("EnhancedListView.properties") && new File(project.property("EnhancedListView.properties")).exists()) {
 
-if(project.hasProperty('sonatypeRepo') && project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
+    Properties props = new Properties()
+    props.load(new FileInputStream(file(project.property("EnhancedListView.properties"))))
+
+    gradle.taskGraph.whenReady { taskGraph ->
+        if (taskGraph.allTasks.any { it instanceof Sign }) {
+            allprojects { ext."signing.keyId" = props['signing.keyId'] }
+            allprojects { ext."signing.secretKeyRingFile" = props['signing.secretKeyRingFile'] }
+            allprojects { ext."signing.password" = props['signing.password'] }
+        }
+    }
+
+    signing {
+        required { has("release") && gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
     uploadArchives {
 
         configuration = configurations.archives
@@ -52,8 +64,8 @@ if(project.hasProperty('sonatypeRepo') && project.hasProperty('sonatypeUsername'
 
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-            repository(url: sonatypeRepo) {
-                authentication(userName: sonatypeUsername, password: sonatypePassword )
+            repository(url: props['sonatypeRepo']) {
+                authentication(userName: props['sonatypeUsername'], password: props['sonatypePassword'])
             }
 
             pom.project {
@@ -89,4 +101,5 @@ if(project.hasProperty('sonatypeRepo') && project.hasProperty('sonatypeUsername'
 
         }
     }
+
 }
