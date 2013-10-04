@@ -1,3 +1,18 @@
+/*
+ * Copyright 2013 Tim Roes
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.timroes.android.listviewdemo;
 
 import android.app.AlertDialog;
@@ -8,7 +23,6 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,11 +43,11 @@ import de.timroes.android.listview.EnhancedListView;
 public class MainActivity extends ActionBarActivity {
 
     private enum ControlGroup {
-        SWIPE_TO_DIMISS
+		SWIPE_TO_DISMISS
     }
 
     private static final String PREF_UNDO_STYLE = "de.timroes.android.listviewdemo.UNDO_STYLE";
-    private static final String PREF_SWIPE_TO_DISMISS = "de.timroes.android.listviewdemo.SWIPE_TO_DIMISS";
+    private static final String PREF_SWIPE_TO_DISMISS = "de.timroes.android.listviewdemo.SWIPE_TO_DISMISS";
     private static final String PREF_SWIPE_DIRECTION = "de.timroes.android.listviewdemo.SWIPE_DIRECTION";
     private static final String PREF_SWIPE_LAYOUT = "de.timroes.android.listviewdemo.SWIPE_LAYOUT";
 
@@ -84,7 +98,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 getPreferences(MODE_PRIVATE).edit().putBoolean(PREF_SWIPE_TO_DISMISS, isChecked).commit();
-                enableControlGroup(ControlGroup.SWIPE_TO_DIMISS, isChecked);
+                enableControlGroup(ControlGroup.SWIPE_TO_DISMISS, isChecked);
             }
         });
         swipeToDismiss.setChecked(getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
@@ -108,7 +122,7 @@ public class MainActivity extends ActionBarActivity {
         mSwipeDirectionPref.putInt(DialogPicker.DIALOG_ITEMS_ID, R.array.swipe_direction);
         mSwipeDirectionPref.putString(DialogPicker.DIALOG_PREF_KEY, PREF_SWIPE_DIRECTION);
 
-        enableControlGroup(ControlGroup.SWIPE_TO_DIMISS, getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
+        enableControlGroup(ControlGroup.SWIPE_TO_DISMISS, getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
 
         // Set the callback that handles dismisses.
         mListView.setDismissCallback(new de.timroes.android.listview.EnhancedListView.OnDismissCallback() {
@@ -164,7 +178,7 @@ public class MainActivity extends ActionBarActivity {
      */
     private void enableControlGroup(ControlGroup group, boolean enabled) {
         switch(group) {
-            case SWIPE_TO_DIMISS:
+            case SWIPE_TO_DISMISS:
                 findViewById(R.id.pref_swipedirection).setEnabled(enabled);
                 findViewById(R.id.pref_swipelayout).setEnabled(enabled);
                 break;
