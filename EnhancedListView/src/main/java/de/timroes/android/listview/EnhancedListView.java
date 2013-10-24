@@ -746,8 +746,9 @@ public class EnhancedListView extends ListView {
     private void performDismiss(final View dismissView, final View listItemView, final int dismissPosition) {
 
         final ViewGroup.LayoutParams lp = listItemView.getLayoutParams();
-        final int originalHeight = listItemView.getHeight();
+        final int originalLayoutHeight = lp.height;
 
+        int originalHeight = listItemView.getHeight();
         ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
 
         animator.addListener(new AnimatorListenerAdapter() {
@@ -802,7 +803,7 @@ public class EnhancedListView extends ListView {
                         ViewHelper.setAlpha(pendingDismiss.view, 1f);
                         ViewHelper.setTranslationX(pendingDismiss.view, 0);
                         lp = pendingDismiss.childView.getLayoutParams();
-                        lp.height = originalHeight;
+                        lp.height = originalLayoutHeight;
                         pendingDismiss.childView.setLayoutParams(lp);
                     }
 
