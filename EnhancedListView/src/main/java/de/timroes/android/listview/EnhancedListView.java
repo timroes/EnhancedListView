@@ -349,6 +349,10 @@ public class EnhancedListView extends ListView {
 
     private void init(Context ctx) {
 
+        if(isInEditMode()) {
+            // Skip initializing when in edit mode (IDE preview).
+            return;
+        }
         ViewConfiguration vc =ViewConfiguration.get(ctx);
         mSlop = vc.getScaledTouchSlop();
         mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
