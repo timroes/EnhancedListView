@@ -32,11 +32,12 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 import de.timroes.android.listview.EnhancedListView;
 
@@ -149,22 +150,19 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
-        // Show toast message on click and long click on list items.
+        // Show toast message on click on list items.
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Toast.makeText(MainActivity.this, "Clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
             }
         });
-        mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "Long clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
 
         mListView.setSwipingLayout(R.id.swiping_layout);
+
+        mListView.setArrayList(mAdapter.getItems());
+        mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        mListView.enableRearranging();
 
         applySettings();
 
@@ -284,13 +282,25 @@ public class MainActivity extends ActionBarActivity {
 
     private class EnhancedListAdapter extends BaseAdapter {
 
-        private List<String> mItems = new ArrayList<String>();
+        final int INVALID_ID = -1;
+        private ArrayList<String> mItems = new ArrayList<String>();
+        HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
+
+        ArrayList getItems(){
+            return mItems;
+        }
 
         void resetItems() {
             mItems.clear();
             for(int i = 1; i <= 40; i++) {
                 mItems.add("Item " + i);
             }
+
+            mIdMap.clear();
+            for (int i = 0; i < mItems.size(); ++i) {
+                mIdMap.put(mItems.get(i), i);
+            }
+
             notifyDataSetChanged();
         }
 
@@ -334,7 +344,11 @@ public class MainActivity extends ActionBarActivity {
          */
         @Override
         public long getItemId(int position) {
-            return position;
+            if (position < 0 || position >= mIdMap.size()) {
+                return INVALID_ID;
+            }
+            Object item = getItem(position);
+            return mIdMap.get(item);
         }
 
         /**
