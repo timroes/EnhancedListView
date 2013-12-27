@@ -125,6 +125,27 @@ public class EnhancedListView extends ListView {
     }
 
     /**
+     * The callback interface used by {@link #setShouldSwipeCallback(EnhancedListView.OnShouldSwipeCallback)}
+     * to inform its client that a list item is going to be swiped and check whether is
+     * should or not. Implement this to prevent some items from be swiped.
+     */
+    public interface OnShouldSwipeCallback {
+
+        /**
+         * Called when the user is swiping an item from the list.
+         * <p>
+         * If the user should get the possibility to swipe the item, return true.
+         * Otherwise, return false to disable swiping for this item.
+         *
+         * @param listView The {@link EnhancedListView} the item is wiping from.
+         * @param position The position of the item to swipe in your adapter.
+         * @return Whether the item should be swiped or not.
+         */
+        boolean onShouldSwipe(EnhancedListView listView, int position);
+
+    }
+
+    /**
      * The callback interface used by {@link #setDismissCallback(EnhancedListView.OnDismissCallback)}
      * to inform its client about a successful dismissal of one or more list item positions.
      * Implement this to remove items from your adapter, that has been swiped from the list.
@@ -275,11 +296,7 @@ public class EnhancedListView extends ListView {
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == mValidDelayedMsgId) {
-                for(Undoable undo : mUndoActions) {
-                    undo.discard();
-                }
-                mUndoActions.clear();
-                mUndoPopup.dismiss();
+            	discardUndo();
             }
         }
     }
@@ -295,6 +312,7 @@ public class EnhancedListView extends ListView {
     // Swipe-To-Dismiss
     private boolean mSwipeEnabled;
     private OnDismissCallback mDismissCallback;
+    private OnShouldSwipeCallback mShouldSwipeCallback;
     private UndoStyle mUndoStyle = UndoStyle.SINGLE_POPUP;
     private boolean mTouchBeforeAutoHide = true;
     private SwipeDirection mSwipeDirection = SwipeDirection.BOTH;
@@ -434,6 +452,17 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView setDismissCallback(OnDismissCallback dismissCallback) {
         mDismissCallback = dismissCallback;
+        return this;
+    }
+
+    /**
+     * Sets the callback to be called when the user is swiping an item from the list.
+     *
+     * @param shouldSwipeCallback The callback used to handle swipes of list items.
+     * @return This {@link de.timroes.android.listview.EnhancedListView}
+     */
+    public EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback) {
+        mShouldSwipeCallback = shouldSwipeCallback;
         return this;
     }
 
@@ -647,11 +676,19 @@ public class EnhancedListView extends ListView {
                 }
 
                 if (mSwipeDownView != null) {
+                    // test if the item should be swiped
+                    int position = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
+                    if ((mShouldSwipeCallback == null) ||
+                        mShouldSwipeCallback.onShouldSwipe(this, position)) {
                     mDownX = ev.getRawX();
-                    mDownPosition = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
+                        mDownPosition = position;
 
                     mVelocityTracker = VelocityTracker.obtain();
                     mVelocityTracker.addMovement(ev);
+                    } else {
+                        // set back to null to revert swiping
+                        mSwipeDownView = mSwipeDownChild = null;
+                    }
                 }
                 super.onTouchEvent(ev);
                 return true;
