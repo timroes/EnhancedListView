@@ -39,6 +39,7 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -334,8 +335,6 @@ public class EnhancedListView extends ListView {
     private Button mUndoButton;
     // END Swipe-To-Dismiss
 
-    private ArrayList mArrayList;
-
     // START Drag-And-Drop
     private boolean mRearrangingEnabled;
     private final int SMOOTH_SCROLL_AMOUNT_AT_EDGE = 15;
@@ -455,6 +454,8 @@ public class EnhancedListView extends ListView {
                     mCellIsMobile = true;
 
                     updateNeighborViewsForID(mMobileItemId);
+
+                    ((RearrangementListener)getAdapter()).onStartedRearranging();
 
                     return true;
                 }
@@ -592,7 +593,8 @@ public class EnhancedListView extends ListView {
                 return;
             }
 
-            swapElements(mArrayList, originalItem, getPositionForView(switchView));
+
+            ((RearrangementListener)getAdapter()).swapElements(originalItem, getPositionForView(switchView));
 
             ((BaseAdapter) getAdapter()).notifyDataSetChanged();
 
@@ -628,16 +630,6 @@ public class EnhancedListView extends ListView {
                 }
             });
         }
-    }
-
-    private void swapElements(ArrayList arrayList, int indexOne, int indexTwo) {
-        Object temp = arrayList.get(indexOne);
-        arrayList.set(indexOne, arrayList.get(indexTwo));
-        arrayList.set(indexTwo, temp);
-    }
-
-    public void setArrayList(ArrayList arrayList){
-        mArrayList = arrayList;
     }
 
 
@@ -689,6 +681,8 @@ public class EnhancedListView extends ListView {
                 }
             });
             hoverViewAnimator.start();
+
+            ((RearrangementListener)getAdapter()).onFinishedRearranging();
         } else {
             touchEventsCancelled();
         }
@@ -706,6 +700,8 @@ public class EnhancedListView extends ListView {
             mobileView.setVisibility(VISIBLE);
             mHoverCell = null;
             invalidate();
+
+            ((RearrangementListener)getAdapter()).onFinishedRearranging();
         }
         mCellIsMobile = false;
         mIsMobileScrolling = false;
@@ -856,6 +852,14 @@ public class EnhancedListView extends ListView {
         mRearrangingEnabled = true;
 
         return this;
+    }
+
+    @Override
+    public void setAdapter(ListAdapter adapter) {
+        if (!(adapter instanceof RearrangementListener) && mRearrangingEnabled){
+            throw new IllegalStateException("Adapter must implement RearrangementListener if rearranging is enabled.");
+        }
+        super.setAdapter(adapter);
     }
 
     /**

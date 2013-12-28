@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import de.timroes.android.listview.EnhancedListView;
+import de.timroes.android.listview.RearrangementListener;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -280,11 +281,26 @@ public class MainActivity extends ActionBarActivity {
         picker.show(getSupportFragmentManager(), "SWIPE_DIR_PICKER");
     }
 
-    private class EnhancedListAdapter extends BaseAdapter {
+    private class EnhancedListAdapter extends BaseAdapter implements RearrangementListener {
 
         final int INVALID_ID = -1;
         private ArrayList<String> mItems = new ArrayList<String>();
         HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
+
+        public void onStartedRearranging(){}
+
+        public void swapElements(int indexOne, int indexTwo){
+            String temp1 = mItems.get(indexOne);
+            String temp2 = mItems.get(indexTwo);
+
+            mItems.remove(indexOne);
+            mItems.add(indexOne, temp2);
+
+            mItems.remove(indexTwo);
+            mItems.add(indexTwo, temp1);
+        }
+
+        public void onFinishedRearranging(){}
 
         ArrayList getItems(){
             return mItems;
