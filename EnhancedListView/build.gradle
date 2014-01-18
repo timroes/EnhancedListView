@@ -24,13 +24,15 @@ android {
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 19
+        versionName "0.2.0"
+        versionCode 4
     }
 }
 
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "0.1.3"
+version = android.defaultConfig.versionName
 group = "de.timroes.android"
 
 configurations {
