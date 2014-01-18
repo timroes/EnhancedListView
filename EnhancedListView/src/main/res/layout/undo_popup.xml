@@ -10,6 +10,8 @@
 			android:padding="8dp"
 			android:textSize="16sp"
 			android:layout_weight="1"
+			android:singleLine="true"
+			android:ellipsize="end"
 			android:textColor="@color/popup_text_color"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"/>
