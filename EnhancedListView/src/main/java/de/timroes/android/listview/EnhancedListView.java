@@ -34,6 +34,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
@@ -394,11 +395,10 @@ public class EnhancedListView extends ListView {
         });
         mUndoPopupTextView = (TextView)undoView.findViewById(R.id.text);
 
-        mUndoPopup = new PopupWindow(undoView);
+        mUndoPopup = new PopupWindow(undoView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
         mUndoPopup.setAnimationStyle(R.style.fade_animation);
 
         mScreenDensity = getResources().getDisplayMetrics().density;
-        mUndoPopup.setHeight((int)(mScreenDensity * 56));
         // END initialize undo popup
 
         setOnScrollListener(makeScrollListener());
