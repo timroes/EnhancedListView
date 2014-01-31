@@ -279,7 +279,9 @@ public class EnhancedListView extends ListView {
 
             // Dismiss dialog or change text
             if(mUndoActions.isEmpty()) {
-                mUndoPopup.dismiss();
+                if(mUndoPopup.isShowing()) {
+                    mUndoPopup.dismiss();
+                }
             } else {
                 changePopupText();
                 changeButtonLabel();
@@ -553,7 +555,9 @@ public class EnhancedListView extends ListView {
             undoable.discard();
         }
         mUndoActions.clear();
-        mUndoPopup.dismiss();
+        if(mUndoPopup.isShowing()) {
+            mUndoPopup.dismiss();
+        }
     }
 
     /**
@@ -942,4 +946,18 @@ public class EnhancedListView extends ListView {
         }
 
     }
+    
+    @Override
+	protected void onWindowVisibilityChanged(int visibility) {
+		super.onWindowVisibilityChanged(visibility);
+		
+		/*
+		 * If the container window no longer visiable,
+		 * dismiss visible undo popup window so it won't leak,
+		 * cos the container window will be destroyed before dismissing the popup window.
+		 */
+		if(visibility != View.VISIBLE) {
+			discardUndo();
+		}
+	}
 }
