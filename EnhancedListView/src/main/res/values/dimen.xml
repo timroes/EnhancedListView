@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-	<!-- The touch slop you need to cause a swipe instead of a scroll -->
-	<dimen name="elv_touch_slop">32dp</dimen>
-</resources>
