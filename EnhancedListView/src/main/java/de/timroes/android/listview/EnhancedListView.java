@@ -305,7 +305,7 @@ public class EnhancedListView extends ListView {
     }
 
     // Cached ViewConfiguration and system-wide constant values
-    private int mSlop;
+    private float mSlop;
     private int mMinFlingVelocity;
     private int mMaxFlingVelocity;
     private long mAnimationTime;
@@ -375,8 +375,8 @@ public class EnhancedListView extends ListView {
             return;
         }
         ViewConfiguration vc =ViewConfiguration.get(ctx);
-        mSlop = vc.getScaledTouchSlop();
-        mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
+        mSlop = getResources().getDimension(R.dimen.elv_touch_slop);
+		mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
         mMaxFlingVelocity = vc.getScaledMaximumFlingVelocity();
         mAnimationTime = ctx.getResources().getInteger(
                 android.R.integer.config_shortAnimTime);
