@@ -828,10 +828,11 @@ public class EnhancedListView extends ListView {
                         changeButtonLabel();
 
                         // Show undo popup
+                        float yLocationOffset = getResources().getDimension(R.dimen.elv_bottom_offset);
                         mUndoPopup.setWidth((int)Math.min(mScreenDensity * 400, getWidth() * 0.9f));
                         mUndoPopup.showAtLocation(EnhancedListView.this,
                                 Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM,
-                                0, (int)(mScreenDensity * 15));
+                                0, (int) yLocationOffset);
 
                         // Queue the dismiss only if required
                         if(!mTouchBeforeAutoHide) {
