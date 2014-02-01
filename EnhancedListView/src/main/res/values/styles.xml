@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<style name="fade_animation">
-		<item name="@android:windowEnterAnimation">@anim/popup_show</item>
-		<item name="@android:windowExitAnimation">@anim/popup_hide</item>
+	<style name="elv_fade_animation">
+		<item name="@android:windowEnterAnimation">@anim/elv_popup_show</item>
+		<item name="@android:windowExitAnimation">@anim/elv_popup_hide</item>
 	</style>
 </resources>

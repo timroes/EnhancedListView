@@ -3,7 +3,7 @@
 		android:layout_width="fill_parent" 
 		android:layout_height="fill_parent" 
 		android:orientation="horizontal"
-		android:background="@drawable/popup_bg"
+		android:background="@drawable/elv_popup_bg"
 		android:paddingRight="8dp"
 		android:gravity="center">
 	<TextView android:id="@+id/text"
@@ -12,7 +12,7 @@
 			android:layout_weight="1"
 			android:singleLine="true"
 			android:ellipsize="end"
-			android:textColor="@color/popup_text_color"
+			android:textColor="@color/elv_popup_text_color"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"/>
 	<View
@@ -23,11 +23,11 @@
 			android:layout_marginBottom="15dp"
 			android:layout_width="1dp"
 			android:layout_height="fill_parent"
-			android:background="@color/separator_color"/>
+			android:background="@color/elv_separator_color"/>
 	<Button android:id="@+id/undo"
-			android:textColor="@color/popup_text_color"
-			android:background="@drawable/undo_btn_bg"
-			android:drawableLeft="@drawable/ic_action_undo"
+			android:textColor="@color/elv_popup_text_color"
+			android:background="@drawable/elv_undo_btn_bg"
+			android:drawableLeft="@drawable/elv_ic_action_undo"
 			android:layout_weight="0"
 			android:paddingRight="8dp"
 			android:layout_width="wrap_content"

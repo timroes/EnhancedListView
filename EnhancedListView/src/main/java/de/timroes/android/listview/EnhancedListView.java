@@ -21,7 +21,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -34,7 +33,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
@@ -383,7 +381,7 @@ public class EnhancedListView extends ListView {
 
         // Initialize undo popup
         LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View undoView = inflater.inflate(R.layout.undo_popup, null);
+        View undoView = inflater.inflate(R.layout.elv_undo_popup, null);
         mUndoButton = (Button)undoView.findViewById(R.id.undo);
         mUndoButton.setOnClickListener(new UndoClickListener());
         mUndoButton.setOnTouchListener(new OnTouchListener() {
@@ -398,7 +396,7 @@ public class EnhancedListView extends ListView {
         mUndoPopupTextView = (TextView)undoView.findViewById(R.id.text);
 
         mUndoPopup = new PopupWindow(undoView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
-        mUndoPopup.setAnimationStyle(R.style.fade_animation);
+        mUndoPopup.setAnimationStyle(R.style.elv_fade_animation);
 
         mScreenDensity = getResources().getDisplayMetrics().density;
         // END initialize undo popup
@@ -877,14 +875,14 @@ public class EnhancedListView extends ListView {
     private void changePopupText() {
         String msg = null;
         if(mUndoActions.size() > 1) {
-            msg = getResources().getString(R.string.n_items_deleted, mUndoActions.size());
+            msg = getResources().getString(R.string.elv_n_items_deleted, mUndoActions.size());
         } else if(mUndoActions.size() >= 1) {
             // Set title from single undoable or when no multiple deletion string
             // is given
             msg = mUndoActions.get(mUndoActions.size() - 1).getTitle();
 
             if(msg == null) {
-                msg = getResources().getString(R.string.item_deleted);
+                msg = getResources().getString(R.string.elv_item_deleted);
             }
         }
         mUndoPopupTextView.setText(msg);
@@ -896,9 +894,9 @@ public class EnhancedListView extends ListView {
     private void changeButtonLabel() {
         String msg;
         if(mUndoActions.size() > 1 && mUndoStyle == UndoStyle.COLLAPSED_POPUP) {
-            msg = getResources().getString(R.string.undo_all);
+            msg = getResources().getString(R.string.elv_undo_all);
         } else {
-            msg = getResources().getString(R.string.undo);
+            msg = getResources().getString(R.string.elv_undo);
         }
         mUndoButton.setText(msg);
     }
