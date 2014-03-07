@@ -28,6 +28,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
@@ -747,6 +748,12 @@ public class EnhancedListView extends ListView {
                 float deltaX = ev.getRawX() - mDownX;
                 // Only start swipe in correct direction
                 if(isSwipeDirectionValid(deltaX)) {
+                    ViewParent parent = getParent();
+                    if(parent != null) {
+                        // If we swipe don't allow parent to intercept touch (e.g. like NavigationDrawer does)
+                        // otherwise swipe would not be working.
+                        parent.requestDisallowInterceptTouchEvent(true);
+                    }
                     if (Math.abs(deltaX) > mSlop) {
                         mSwiping = true;
                         requestDisallowInterceptTouchEvent(true);
