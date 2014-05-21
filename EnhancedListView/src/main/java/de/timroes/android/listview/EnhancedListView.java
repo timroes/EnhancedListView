@@ -668,8 +668,9 @@ public class EnhancedListView extends ListView {
                 getLocationOnScreen(listViewCoords);
                 final int x = (int) ev.getRawX() - listViewCoords[0];
                 final int y = (int) ev.getRawY() - listViewCoords[1];
+                final int offset = Math.max(0, getHeaderViewsCount() - getFirstVisiblePosition());
                 View child;
-                for (int i = getHeaderViewsCount(); i < childCount; i++) {
+                for (int i = offset; i < childCount; i++) {
                     child = getChildAt(i);
                     if(child != null) {
                         child.getHitRect(rect);
