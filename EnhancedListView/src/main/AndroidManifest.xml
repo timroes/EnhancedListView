@@ -1,4 +1,6 @@
-<manifest package="de.timroes.android.listview">
+<manifest package="de.timroes.android.listview" xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <uses-sdk android:minSdkVersion="8"/>
 
     <application>
     </application>

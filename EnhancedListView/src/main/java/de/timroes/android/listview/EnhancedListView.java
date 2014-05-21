@@ -15,6 +15,15 @@
  */
 package de.timroes.android.listview;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
@@ -40,13 +49,6 @@ import com.nineoldandroids.animation.AnimatorListenerAdapter;
 import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.view.ViewHelper;
 import com.nineoldandroids.view.ViewPropertyAnimator;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * A {@link android.widget.ListView} offering enhanced features like Swipe To Dismiss and an
@@ -233,14 +235,14 @@ public class EnhancedListView extends ListView {
          */
         public View childView;
 
-        PendingDismissData(int position, View view, View childView) {
+        PendingDismissData(final int position, final View view, final View childView) {
             this.position = position;
             this.view = view;
             this.childView = childView;
         }
 
         @Override
-        public int compareTo(PendingDismissData other) {
+        public int compareTo(final PendingDismissData other) {
             // Sort by descending position
             return other.position - position;
         }
@@ -255,7 +257,7 @@ public class EnhancedListView extends ListView {
          * @param v The view that was clicked.
          */
         @Override
-        public void onClick(View v) {
+        public void onClick(final View v) {
             if(!mUndoActions.isEmpty()) {
                 switch(mUndoStyle) {
                     case SINGLE_POPUP:
@@ -264,7 +266,7 @@ public class EnhancedListView extends ListView {
                         break;
                     case COLLAPSED_POPUP:
                         Collections.reverse(mUndoActions);
-                        for(Undoable undo : mUndoActions) {
+                        for(final Undoable undo : mUndoActions) {
                             undo.undo();
                         }
                         mUndoActions.clear();
@@ -290,15 +292,25 @@ public class EnhancedListView extends ListView {
         }
     }
 
-    private class HideUndoPopupHandler extends Handler {
+    private static class HideUndoPopupHandler extends Handler {
+        
+        WeakReference<EnhancedListView> mRef;
+        
+        public HideUndoPopupHandler(final EnhancedListView ref) {
+            mRef = new WeakReference<EnhancedListView>(ref);
+        }
 
         /**
          * Subclasses must implement this to receive messages.
          */
         @Override
-        public void handleMessage(Message msg) {
-            if(msg.what == mValidDelayedMsgId) {
-            	discardUndo();
+        public void handleMessage(final Message msg) {
+            final EnhancedListView ref = mRef.get();
+            if (ref == null)
+                return; // context gone
+            
+            if(msg.what == ref.mValidDelayedMsgId) {
+            	ref.discardUndo();
             }
         }
     }
@@ -321,9 +333,9 @@ public class EnhancedListView extends ListView {
     private int mUndoHideDelay = 5000;
     private int mSwipingLayout;
 
-    private List<Undoable> mUndoActions = new ArrayList<Undoable>();
-    private SortedSet<PendingDismissData> mPendingDismisses = new TreeSet<PendingDismissData>();
-    private List<View> mAnimatedViews = new LinkedList<View>();
+    private final List<Undoable> mUndoActions = new ArrayList<Undoable>();
+    private final SortedSet<PendingDismissData> mPendingDismisses = new TreeSet<PendingDismissData>();
+    private final List<View> mAnimatedViews = new LinkedList<View>();
     private int mDismissAnimationRefCount;
 
     private boolean mSwipePaused;
@@ -338,15 +350,15 @@ public class EnhancedListView extends ListView {
     private float mScreenDensity;
 
     private PopupWindow mUndoPopup;
-    private int mValidDelayedMsgId;
-    private Handler mHideUndoHandler = new HideUndoPopupHandler();
+    int mValidDelayedMsgId;
+    private final Handler mHideUndoHandler = new HideUndoPopupHandler(this);
     private Button mUndoButton;
     // END Swipe-To-Dismiss
 
     /**
      * {@inheritDoc}
      */
-    public EnhancedListView(Context context) {
+    public EnhancedListView(final Context context) {
         super(context);
         init(context);
     }
@@ -354,7 +366,7 @@ public class EnhancedListView extends ListView {
     /**
      * {@inheritDoc}
      */
-    public EnhancedListView(Context context, AttributeSet attrs) {
+    public EnhancedListView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
@@ -362,18 +374,18 @@ public class EnhancedListView extends ListView {
     /**
      * {@inheritDoc}
      */
-    public EnhancedListView(Context context, AttributeSet attrs, int defStyle) {
+    public EnhancedListView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs, defStyle);
         init(context);
     }
 
-    private void init(Context ctx) {
+    private void init(final Context ctx) {
 
         if(isInEditMode()) {
             // Skip initializing when in edit mode (IDE preview).
             return;
         }
-        ViewConfiguration vc =ViewConfiguration.get(ctx);
+        final ViewConfiguration vc =ViewConfiguration.get(ctx);
         mSlop = getResources().getDimension(R.dimen.elv_touch_slop);
 		mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
         mMaxFlingVelocity = vc.getScaledMaximumFlingVelocity();
@@ -381,13 +393,13 @@ public class EnhancedListView extends ListView {
                 android.R.integer.config_shortAnimTime);
 
         // Initialize undo popup
-        LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View undoView = inflater.inflate(R.layout.elv_undo_popup, null);
+        final LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View undoView = inflater.inflate(R.layout.elv_undo_popup, null);
         mUndoButton = (Button)undoView.findViewById(R.id.undo);
         mUndoButton.setOnClickListener(new UndoClickListener());
         mUndoButton.setOnTouchListener(new OnTouchListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
+            public boolean onTouch(final View v, final MotionEvent event) {
                 // If the user touches the screen invalidate the current running delay by incrementing
                 // the valid message id. So this delay won't hide the undo popup anymore
                 mValidDelayedMsgId++;
@@ -451,7 +463,7 @@ public class EnhancedListView extends ListView {
      * @param dismissCallback The callback used to handle dismisses of list items.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setDismissCallback(OnDismissCallback dismissCallback) {
+    public EnhancedListView setDismissCallback(final OnDismissCallback dismissCallback) {
         mDismissCallback = dismissCallback;
         return this;
     }
@@ -462,7 +474,7 @@ public class EnhancedListView extends ListView {
      * @param shouldSwipeCallback The callback used to handle swipes of list items.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback) {
+    public EnhancedListView setShouldSwipeCallback(final OnShouldSwipeCallback shouldSwipeCallback) {
         mShouldSwipeCallback = shouldSwipeCallback;
         return this;
     }
@@ -475,7 +487,7 @@ public class EnhancedListView extends ListView {
      * @param undoStyle The style of this listview.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setUndoStyle(UndoStyle undoStyle) {
+    public EnhancedListView setUndoStyle(final UndoStyle undoStyle) {
         mUndoStyle = undoStyle;
         return this;
     }
@@ -489,7 +501,7 @@ public class EnhancedListView extends ListView {
      * @param hideDelay The delay in milliseconds.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setUndoHideDelay(int hideDelay) {
+    public EnhancedListView setUndoHideDelay(final int hideDelay) {
         mUndoHideDelay = hideDelay;
         return this;
     }
@@ -503,7 +515,7 @@ public class EnhancedListView extends ListView {
      *
      * @see #setUndoHideDelay(int)
      */
-    public EnhancedListView setRequireTouchBeforeDismiss(boolean touchBeforeDismiss) {
+    public EnhancedListView setRequireTouchBeforeDismiss(final boolean touchBeforeDismiss) {
         mTouchBeforeAutoHide = touchBeforeDismiss;
         return this;
     }
@@ -519,7 +531,7 @@ public class EnhancedListView extends ListView {
      * @param direction The direction to which the swipe should be limited.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setSwipeDirection(SwipeDirection direction) {
+    public EnhancedListView setSwipeDirection(final SwipeDirection direction) {
         mSwipeDirection = direction;
         return this;
     }
@@ -538,7 +550,7 @@ public class EnhancedListView extends ListView {
      * @param swipingLayoutId The id (from R.id) of the view, that should be swiped.
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
-    public EnhancedListView setSwipingLayout(int swipingLayoutId) {
+    public EnhancedListView setSwipingLayout(final int swipingLayoutId) {
         mSwipingLayout = swipingLayoutId;
         return this;
     }
@@ -550,7 +562,7 @@ public class EnhancedListView extends ListView {
      * break your data consistency.
      */
     public void discardUndo() {
-        for(Undoable undoable : mUndoActions) {
+        for(final Undoable undoable : mUndoActions) {
             undoable.discard();
         }
         mUndoActions.clear();
@@ -574,14 +586,14 @@ public class EnhancedListView extends ListView {
      * @throws java.lang.IllegalStateException when this method is called before an {@link EnhancedListView.OnDismissCallback}
      *      is set via {@link #setDismissCallback(de.timroes.android.listview.EnhancedListView.OnDismissCallback)}.
      * */
-    public void delete(int position) {
+    public void delete(final int position) {
         if(mDismissCallback == null) {
             throw new IllegalStateException("You must set an OnDismissCallback, before deleting items.");
         }
         if(position < 0 || position >= getCount()) {
             throw new IndexOutOfBoundsException(String.format("Tried to delete item %d. #items in list: %d", position, getCount()));
         }
-        View childView = getChildAt(position - getFirstVisiblePosition());
+        final View childView = getChildAt(position - getFirstVisiblePosition());
         View view = null;
         if(mSwipingLayout > 0) {
             view = childView.findViewById(mSwipingLayout);
@@ -601,7 +613,7 @@ public class EnhancedListView extends ListView {
      * @param position The item position of the item.
      * @param toRightSide Whether it should slide out to the right side.
      */
-    private void slideOutView(final View view, final View childView, final int position, boolean toRightSide) {
+    private void slideOutView(final View view, final View childView, final int position, final boolean toRightSide) {
 
         // Only start new animation, if this view isn't already animated (too fast swiping bug)
         synchronized(mAnimationLock) {
@@ -618,14 +630,14 @@ public class EnhancedListView extends ListView {
                 .setDuration(mAnimationTime)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
-                    public void onAnimationEnd(Animator animation) {
+                    public void onAnimationEnd(final Animator animation) {
                         performDismiss(view, childView, position);
                     }
                 });
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent ev) {
+    public boolean onTouchEvent(final MotionEvent ev) {
 
         if (!mSwipeEnabled) {
             return super.onTouchEvent(ev);
@@ -650,12 +662,12 @@ public class EnhancedListView extends ListView {
                 // TODO: ensure this is a finger, and set a flag
 
                 // Find the child view that was touched (perform a hit test)
-                Rect rect = new Rect();
-                int childCount = getChildCount();
-                int[] listViewCoords = new int[2];
+                final Rect rect = new Rect();
+                final int childCount = getChildCount();
+                final int[] listViewCoords = new int[2];
                 getLocationOnScreen(listViewCoords);
-                int x = (int) ev.getRawX() - listViewCoords[0];
-                int y = (int) ev.getRawY() - listViewCoords[1];
+                final int x = (int) ev.getRawX() - listViewCoords[0];
+                final int y = (int) ev.getRawY() - listViewCoords[1];
                 View child;
                 for (int i = getHeaderViewsCount(); i < childCount; i++) {
                     child = getChildAt(i);
@@ -664,7 +676,7 @@ public class EnhancedListView extends ListView {
                         if (rect.contains(x, y)) {
                             // if a specific swiping layout has been giving, use this to swipe.
                             if(mSwipingLayout > 0) {
-                                View swipingView = child.findViewById(mSwipingLayout);
+                                final View swipingView = child.findViewById(mSwipingLayout);
                                 if(swipingView != null) {
                                     mSwipeDownView = swipingView;
                                     mSwipeDownChild = child;
@@ -680,12 +692,14 @@ public class EnhancedListView extends ListView {
 
                 if (mSwipeDownView != null) {
                     // test if the item should be swiped
-                    int position = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
+                    final int position = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
                     if ((mShouldSwipeCallback == null) ||
                         mShouldSwipeCallback.onShouldSwipe(this, position)) {
                     mDownX = ev.getRawX();
                         mDownPosition = position;
 
+                    if (mVelocityTracker != null)
+                        mVelocityTracker.recycle();
                     mVelocityTracker = VelocityTracker.obtain();
                     mVelocityTracker.addMovement(ev);
                     } else {
@@ -702,11 +716,11 @@ public class EnhancedListView extends ListView {
                     break;
                 }
 
-                float deltaX = ev.getRawX() - mDownX;
+                final float deltaX = ev.getRawX() - mDownX;
                 mVelocityTracker.addMovement(ev);
                 mVelocityTracker.computeCurrentVelocity(1000);
-                float velocityX = Math.abs(mVelocityTracker.getXVelocity());
-                float velocityY = Math.abs(mVelocityTracker.getYVelocity());
+                final float velocityX = Math.abs(mVelocityTracker.getXVelocity());
+                final float velocityY = Math.abs(mVelocityTracker.getYVelocity());
                 boolean dismiss = false;
                 boolean dismissRight = false;
                 if (Math.abs(deltaX) > mViewWidth / 2 && mSwiping) {
@@ -729,6 +743,9 @@ public class EnhancedListView extends ListView {
                             .setDuration(mAnimationTime)
                             .setListener(null);
                 }
+
+                if (mVelocityTracker != null)
+                    mVelocityTracker.recycle(); // recycle first
                 mVelocityTracker = null;
                 mDownX = 0;
                 mSwipeDownView = null;
@@ -748,7 +765,7 @@ public class EnhancedListView extends ListView {
                 float deltaX = ev.getRawX() - mDownX;
                 // Only start swipe in correct direction
                 if(isSwipeDirectionValid(deltaX)) {
-                    ViewParent parent = getParent();
+                    final ViewParent parent = getParent();
                     if(parent != null) {
                         // If we swipe don't allow parent to intercept touch (e.g. like NavigationDrawer does)
                         // otherwise swipe would not be working.
@@ -759,11 +776,12 @@ public class EnhancedListView extends ListView {
                         requestDisallowInterceptTouchEvent(true);
 
                         // Cancel ListView's touch (un-highlighting the item)
-                        MotionEvent cancelEvent = MotionEvent.obtain(ev);
+                        final MotionEvent cancelEvent = MotionEvent.obtain(ev);
                         cancelEvent.setAction(MotionEvent.ACTION_CANCEL
                                 | (ev.getActionIndex()
                                 << MotionEvent.ACTION_POINTER_INDEX_SHIFT));
                         super.onTouchEvent(cancelEvent);
+                        cancelEvent.recycle();
                     }
                 } else {
                     // If we swiped into wrong direction, act like this was the new
@@ -798,12 +816,12 @@ public class EnhancedListView extends ListView {
         final ViewGroup.LayoutParams lp = listItemView.getLayoutParams();
         final int originalLayoutHeight = lp.height;
 
-        int originalHeight = listItemView.getHeight();
-        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
+        final int originalHeight = listItemView.getHeight();
+        final ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
 
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(Animator animation) {
+            public void onAnimationEnd(final Animator animation) {
 
                 // Make sure no other animation is running. Remove animation from running list, that just finished
                 boolean noAnimationLeft;
@@ -816,14 +834,14 @@ public class EnhancedListView extends ListView {
                 if (noAnimationLeft) {
                     // No active animations, process all pending dismisses.
 
-                    for(PendingDismissData dismiss : mPendingDismisses) {
+                    for(final PendingDismissData dismiss : mPendingDismisses) {
                         if(mUndoStyle == UndoStyle.SINGLE_POPUP) {
-                            for(Undoable undoable : mUndoActions) {
+                            for(final Undoable undoable : mUndoActions) {
                                 undoable.discard();
                             }
                             mUndoActions.clear();
                         }
-                        Undoable undoable = mDismissCallback.onDismiss(EnhancedListView.this, dismiss.position);
+                        final Undoable undoable = mDismissCallback.onDismiss(EnhancedListView.this, dismiss.position);
                         if(undoable != null) {
                             mUndoActions.add(undoable);
                         }
@@ -835,7 +853,7 @@ public class EnhancedListView extends ListView {
                         changeButtonLabel();
 
                         // Show undo popup
-                        float yLocationOffset = getResources().getDimension(R.dimen.elv_undo_bottom_offset);
+                        final float yLocationOffset = getResources().getDimension(R.dimen.elv_undo_bottom_offset);
                         mUndoPopup.setWidth((int)Math.min(mScreenDensity * 400, getWidth() * 0.9f));
                         mUndoPopup.showAtLocation(EnhancedListView.this,
                                 Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM,
@@ -850,7 +868,7 @@ public class EnhancedListView extends ListView {
                     }
 
                     ViewGroup.LayoutParams lp;
-                    for (PendingDismissData pendingDismiss : mPendingDismisses) {
+                    for (final PendingDismissData pendingDismiss : mPendingDismisses) {
                         ViewHelper.setAlpha(pendingDismiss.view, 1f);
                         ViewHelper.setTranslationX(pendingDismiss.view, 0);
                         lp = pendingDismiss.childView.getLayoutParams();
@@ -865,7 +883,7 @@ public class EnhancedListView extends ListView {
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+            public void onAnimationUpdate(final ValueAnimator valueAnimator) {
                 lp.height = (Integer) valueAnimator.getAnimatedValue();
                 listItemView.setLayoutParams(lp);
             }
@@ -912,12 +930,12 @@ public class EnhancedListView extends ListView {
     private OnScrollListener makeScrollListener() {
         return new OnScrollListener() {
             @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
+            public void onScrollStateChanged(final AbsListView view, final int scrollState) {
                 mSwipePaused = scrollState == OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
             }
 
             @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            public void onScroll(final AbsListView view, final int firstVisibleItem, final int visibleItemCount, final int totalItemCount) {
             }
         };
     }
@@ -930,7 +948,8 @@ public class EnhancedListView extends ListView {
      * @param deltaX The delta of x coordinate of the swipe.
      * @return Whether the delta of a swipe is in the right direction.
      */
-    private boolean isSwipeDirectionValid(float deltaX) {
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private boolean isSwipeDirectionValid(final float deltaX) {
 
         int rtlSign = 1;
         // On API level 17 and above, check if we are in a Right-To-Left layout
@@ -954,7 +973,7 @@ public class EnhancedListView extends ListView {
     }
     
     @Override
-	protected void onWindowVisibilityChanged(int visibility) {
+	protected void onWindowVisibilityChanged(final int visibility) {
 		super.onWindowVisibilityChanged(visibility);
 		
 		/*

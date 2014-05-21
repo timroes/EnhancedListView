@@ -22,6 +22,7 @@ android {
 }
 
 apply plugin: 'maven'
+apply plugin: 'eclipse'
 apply plugin: 'signing'
 
 version = android.defaultConfig.versionName
