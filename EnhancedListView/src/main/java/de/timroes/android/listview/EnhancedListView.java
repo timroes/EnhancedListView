@@ -322,6 +322,8 @@ public class EnhancedListView extends ListView {
     private long mAnimationTime;
 
     private final Object[] mAnimationLock = new Object[0];
+    
+    private OnScrollListener mUserScrollListener;
 
     // Swipe-To-Dismiss
     private boolean mSwipeEnabled;
@@ -354,6 +356,27 @@ public class EnhancedListView extends ListView {
     private final Handler mHideUndoHandler = new HideUndoPopupHandler(this);
     private Button mUndoButton;
     // END Swipe-To-Dismiss
+
+    private final OnScrollListener mScrollListener = new OnScrollListener() {
+        
+        @Override
+        public void onScrollStateChanged(final AbsListView view, final int scrollState) {
+            mSwipePaused = scrollState == OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
+            
+            // call through to user's listener
+            final OnScrollListener userScrollListener = mUserScrollListener;
+            if (userScrollListener != null)
+                userScrollListener.onScrollStateChanged(view, scrollState);
+        }
+        
+        @Override
+        public void onScroll(final AbsListView view, final int firstVisibleItem,
+                final int visibleItemCount, final int totalItemCount) {
+            final OnScrollListener userScrollListener = mUserScrollListener;
+            if (userScrollListener != null)
+                userScrollListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
+        }
+    };
 
     /**
      * {@inheritDoc}
@@ -414,7 +437,7 @@ public class EnhancedListView extends ListView {
         mScreenDensity = getResources().getDisplayMetrics().density;
         // END initialize undo popup
 
-        setOnScrollListener(makeScrollListener());
+        super.setOnScrollListener(mScrollListener);
 
     }
 
@@ -452,6 +475,14 @@ public class EnhancedListView extends ListView {
     public EnhancedListView disableSwipeToDismiss() {
         mSwipeEnabled = false;
         return this;
+    }
+    
+    @Override
+    public void setOnScrollListener(final OnScrollListener l) {
+        mUserScrollListener = l;
+        
+        // call super again with ours so it gets fired as expected
+        super.setOnScrollListener(mScrollListener);
     }
 
     /**
@@ -926,19 +957,6 @@ public class EnhancedListView extends ListView {
             msg = getResources().getString(R.string.elv_undo);
         }
         mUndoButton.setText(msg);
-    }
-
-    private OnScrollListener makeScrollListener() {
-        return new OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(final AbsListView view, final int scrollState) {
-                mSwipePaused = scrollState == OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
-            }
-
-            @Override
-            public void onScroll(final AbsListView view, final int firstVisibleItem, final int visibleItemCount, final int totalItemCount) {
-            }
-        };
     }
 
     /**
