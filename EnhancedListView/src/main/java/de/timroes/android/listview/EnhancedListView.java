@@ -645,6 +645,8 @@ public class EnhancedListView extends ListView {
      * @param toRightSide Whether it should slide out to the right side.
      */
     private void slideOutView(final View view, final View childView, final int position, final boolean toRightSide) {
+        if (view == null)
+            return; // sanity check
 
         // Only start new animation, if this view isn't already animated (too fast swiping bug)
         synchronized(mAnimationLock) {
@@ -722,9 +724,10 @@ public class EnhancedListView extends ListView {
                     }
                 }
 
-                if (mSwipeDownView != null) {
+                final View swipeDown = mSwipeDownView;
+                if (swipeDown != null) {
                     // test if the item should be swiped
-                    final int position = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
+                    final int position = getPositionForView(swipeDown) - getHeaderViewsCount();
                     if ((mShouldSwipeCallback == null) ||
                         mShouldSwipeCallback.onShouldSwipe(this, position)) {
                     mDownX = ev.getRawX();
@@ -764,12 +767,14 @@ public class EnhancedListView extends ListView {
                     dismiss = true;
                     dismissRight = mVelocityTracker.getXVelocity() > 0;
                 }
+                
+                final View swipeDown = mSwipeDownView;
                 if (dismiss) {
                     // dismiss
                     slideOutView(mSwipeDownView, mSwipeDownChild, mDownPosition, dismissRight);
-                } else if(mSwiping) {
+                } else if(mSwiping && swipeDown != null) {
                     // Swipe back to regular position
-                    ViewPropertyAnimator.animate(mSwipeDownView)
+                    ViewPropertyAnimator.animate(swipeDown)
                             .translationX(0)
                             .alpha(1)
                             .setDuration(mAnimationTime)
@@ -789,11 +794,12 @@ public class EnhancedListView extends ListView {
 
             case MotionEvent.ACTION_MOVE: {
 
-                if (mVelocityTracker == null || mSwipePaused) {
+                final VelocityTracker tracker = mVelocityTracker;
+                if (tracker == null || mSwipePaused) {
                     break;
                 }
 
-                mVelocityTracker.addMovement(ev);
+                tracker.addMovement(ev);
                 float deltaX = ev.getRawX() - mDownX;
                 // Only start swipe in correct direction
                 if(isSwipeDirectionValid(deltaX)) {
@@ -822,9 +828,10 @@ public class EnhancedListView extends ListView {
                     deltaX = 0;
                 }
 
-                if (mSwiping) {
-                    ViewHelper.setTranslationX(mSwipeDownView, deltaX);
-                    ViewHelper.setAlpha(mSwipeDownView, Math.max(0f, Math.min(1f,
+                final View swipeDown = mSwipeDownView;
+                if (mSwiping && swipeDown != null) {
+                    ViewHelper.setTranslationX(swipeDown, deltaX);
+                    ViewHelper.setAlpha(swipeDown, Math.max(0f, Math.min(1f,
                             1f - 2f * Math.abs(deltaX) / mViewWidth)));
                     return true;
                 }
@@ -844,6 +851,10 @@ public class EnhancedListView extends ListView {
      * @param dismissPosition The position of the view inside the list.
      */
     private void performDismiss(final View dismissView, final View listItemView, final int dismissPosition) {
+        
+        // sanity check
+        if (dismissView == null || listItemView == null)
+            return;
 
         final ViewGroup.LayoutParams lp = listItemView.getLayoutParams();
         final int originalLayoutHeight = lp.height;
