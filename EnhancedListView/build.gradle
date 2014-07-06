@@ -10,15 +10,19 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 18
-    buildToolsVersion "19.0.3"
+    compileSdkVersion 19
+    buildToolsVersion "19.1"
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 19
-        versionName "0.3.2"
-        versionCode 7
+        versionName "0.3.3"
+        versionCode 8
     }
+
+	lintOptions {
+		abortOnError false
+	}
 }
 
 apply plugin: 'maven'
