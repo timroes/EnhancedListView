@@ -31,12 +31,6 @@ apply plugin: 'signing'
 version = android.defaultConfig.versionName
 group = "de.timroes.android"
 
-configurations {
-    archives {
-        extendsFrom configurations.default
-    }
-}
-
 if(project.hasProperty("EnhancedListView.properties") && new File(project.property("EnhancedListView.properties")).exists()) {
 
     Properties props = new Properties()
