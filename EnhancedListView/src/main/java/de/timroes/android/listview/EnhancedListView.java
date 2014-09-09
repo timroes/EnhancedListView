@@ -125,6 +125,27 @@ public class EnhancedListView extends ListView {
     }
 
     /**
+     * The callback interface used by {@link #setSwipeDirectionCallback(EnhancedListView.OnSwipeDirectionCallback)}
+     * to detect if the item swipe direction is valid. If the callback is set, the global
+     * swiping direction flag is overridden. Implement this to implement a item-dependent
+     * swipe direction.
+     */
+    public interface OnSwipeDirectionCallback {
+
+        /**
+         * Called when the user is swiping an item from the list.
+         * <p>
+         * Return the type of swipe the item supports.
+         *
+         * @param listView The {@link EnhancedListView} the item is wiping from.
+         * @param position The position of the item to swipe in your adapter.
+         * @return The support item {@link SwipeDirection}.
+         */
+    	SwipeDirection onSwipeDirection(EnhancedListView listView, int position);
+
+    }
+
+    /**
      * The callback interface used by {@link #setShouldSwipeCallback(EnhancedListView.OnShouldSwipeCallback)}
      * to inform its client that a list item is going to be swiped and check whether is
      * should or not. Implement this to prevent some items from be swiped.
@@ -314,6 +335,7 @@ public class EnhancedListView extends ListView {
     // Swipe-To-Dismiss
     private boolean mSwipeEnabled;
     private OnDismissCallback mDismissCallback;
+    private OnSwipeDirectionCallback mSwipeDirectionCallback;
     private OnShouldSwipeCallback mShouldSwipeCallback;
     private UndoStyle mUndoStyle = UndoStyle.SINGLE_POPUP;
     private boolean mTouchBeforeAutoHide = true;
@@ -464,6 +486,17 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback) {
         mShouldSwipeCallback = shouldSwipeCallback;
+        return this;
+    }
+
+    /**
+     * Sets the callback to be called when the user is swiping an item from the list.
+     *
+     * @param swipeDirectionCallback The callback used to handle swipe-directions of list items.
+     * @return This {@link de.timroes.android.listview.EnhancedListView}
+     */
+    public EnhancedListView setSwipeDirectionCallback(OnSwipeDirectionCallback swipeDirectionCallback) {
+        mSwipeDirectionCallback = swipeDirectionCallback;
         return this;
     }
 
@@ -683,11 +716,11 @@ public class EnhancedListView extends ListView {
                     int position = getPositionForView(mSwipeDownView) - getHeaderViewsCount();
                     if ((mShouldSwipeCallback == null) ||
                         mShouldSwipeCallback.onShouldSwipe(this, position)) {
-                    mDownX = ev.getRawX();
+                        mDownX = ev.getRawX();
                         mDownPosition = position;
 
-                    mVelocityTracker = VelocityTracker.obtain();
-                    mVelocityTracker.addMovement(ev);
+                        mVelocityTracker = VelocityTracker.obtain();
+                        mVelocityTracker.addMovement(ev);
                     } else {
                         // set back to null to revert swiping
                         mSwipeDownView = mSwipeDownChild = null;
@@ -931,7 +964,6 @@ public class EnhancedListView extends ListView {
      * @return Whether the delta of a swipe is in the right direction.
      */
     private boolean isSwipeDirectionValid(float deltaX) {
-
         int rtlSign = 1;
         // On API level 17 and above, check if we are in a Right-To-Left layout
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -941,7 +973,12 @@ public class EnhancedListView extends ListView {
         }
 
         // Check if swipe has been done in the correct direction
-        switch(mSwipeDirection) {
+        SwipeDirection swipeDirection = mSwipeDirection;
+        if (mSwipeDirectionCallback != null) {
+            swipeDirection = mSwipeDirectionCallback.onSwipeDirection(this, mDownPosition);
+        }
+
+        switch (swipeDirection) {
             default:
             case BOTH:
                 return true;
@@ -950,7 +987,6 @@ public class EnhancedListView extends ListView {
             case END:
                 return rtlSign * deltaX > 0;
         }
-
     }
     
     @Override
