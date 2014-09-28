@@ -91,6 +91,17 @@ public class EnhancedListView extends ListView {
     }
 
     /**
+     * Defines the strings shown inside the undo popup.
+     * use {@link #setPopupString(de.timroes.android.listview.EnhancedListView.PopupStrings, int)}
+     */
+    public enum PopupStrings {
+        UNDO,
+        UNDO_ALL,
+        ITEM_DELETED,
+        N_ITEMS_DELETED
+    }
+
+    /**
      * Defines the direction in which list items can be swiped out to delete them.
      * Use {@link #setSwipeDirection(de.timroes.android.listview.EnhancedListView.SwipeDirection)}
      * to change the default behavior.
@@ -309,6 +320,12 @@ public class EnhancedListView extends ListView {
     private int mMaxFlingVelocity;
     private long mAnimationTime;
 
+    // Popup window string resources
+    private int mUndoStringResource;
+    private int mUndoAllStringResource;
+    private int mItemDeletedStringResource;
+    private int mNItemsDeletedStringResource;
+
     private final Object[] mAnimationLock = new Object[0];
 
     // Swipe-To-Dismiss
@@ -400,10 +417,38 @@ public class EnhancedListView extends ListView {
         mUndoPopup.setAnimationStyle(R.style.elv_fade_animation);
 
         mScreenDensity = getResources().getDisplayMetrics().density;
+        // Set the initial popup strings
+        setPopupString(PopupStrings.UNDO, R.string.elv_undo);
+        setPopupString(PopupStrings.UNDO_ALL, R.string.elv_undo_all);
+        setPopupString(PopupStrings.ITEM_DELETED, R.string.elv_item_deleted);
+        setPopupString(PopupStrings.N_ITEMS_DELETED, R.string.elv_n_items_deleted);
         // END initialize undo popup
 
         setOnScrollListener(makeScrollListener());
 
+    }
+
+    /**
+     * Sets a string resource for the undo popup (see {@link de.timroes.android.listview.EnhancedListView.PopupStrings} for possible strings).
+     *
+     * @param string         The string to be set
+     * @param stringResource Resource pointer to the desired string
+     */
+    public void setPopupString(PopupStrings string, int stringResource) {
+        switch (string) {
+            case UNDO:
+                mUndoStringResource = stringResource;
+                break;
+            case UNDO_ALL:
+                mUndoAllStringResource = stringResource;
+                break;
+            case ITEM_DELETED:
+                mItemDeletedStringResource = stringResource;
+                break;
+            case N_ITEMS_DELETED:
+                mNItemsDeletedStringResource = stringResource;
+                break;
+        }
     }
 
     /**
@@ -883,14 +928,14 @@ public class EnhancedListView extends ListView {
     private void changePopupText() {
         String msg = null;
         if(mUndoActions.size() > 1) {
-            msg = getResources().getString(R.string.elv_n_items_deleted, mUndoActions.size());
+            msg = getResources().getString(mNItemsDeletedStringResource, mUndoActions.size());
         } else if(mUndoActions.size() >= 1) {
             // Set title from single undoable or when no multiple deletion string
             // is given
             msg = mUndoActions.get(mUndoActions.size() - 1).getTitle();
 
             if(msg == null) {
-                msg = getResources().getString(R.string.elv_item_deleted);
+                msg = getResources().getString(mItemDeletedStringResource);
             }
         }
         mUndoPopupTextView.setText(msg);
@@ -902,9 +947,9 @@ public class EnhancedListView extends ListView {
     private void changeButtonLabel() {
         String msg;
         if(mUndoActions.size() > 1 && mUndoStyle == UndoStyle.COLLAPSED_POPUP) {
-            msg = getResources().getString(R.string.elv_undo_all);
+            msg = getResources().getString(mUndoAllStringResource);
         } else {
-            msg = getResources().getString(R.string.elv_undo);
+            msg = getResources().getString(mUndoStringResource);
         }
         mUndoButton.setText(msg);
     }
