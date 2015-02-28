@@ -39,11 +39,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.timroes.android.listview.EnhancedListView;
+import de.timroes.android.listview.SwipeDirection;
+import de.timroes.android.listview.UndoStyle;
+import de.timroes.android.listview.Undoable;
 
 public class MainActivity extends ActionBarActivity {
 
     private enum ControlGroup {
-		SWIPE_TO_DISMISS
+        SWIPE_TO_DISMISS
     }
 
     private static final String PREF_UNDO_STYLE = "de.timroes.android.listviewdemo.UNDO_STYLE";
@@ -67,7 +70,8 @@ public class MainActivity extends ActionBarActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
         mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
-            public void onDrawerSlide(View view, float v) { }
+            public void onDrawerSlide(View view, float v) {
+            }
 
             @Override
             public void onDrawerOpened(View view) {
@@ -82,11 +86,12 @@ public class MainActivity extends ActionBarActivity {
             }
 
             @Override
-            public void onDrawerStateChanged(int i) { }
+            public void onDrawerStateChanged(int i) {
+            }
 
         });
 
-        mListView = (EnhancedListView)findViewById(R.id.list);
+        mListView = (EnhancedListView) findViewById(R.id.list);
 
         mAdapter = new EnhancedListAdapter();
         mAdapter.resetItems();
@@ -125,22 +130,22 @@ public class MainActivity extends ActionBarActivity {
         enableControlGroup(ControlGroup.SWIPE_TO_DISMISS, getPreferences(MODE_PRIVATE).getBoolean(PREF_SWIPE_TO_DISMISS, false));
 
         // Set the callback that handles dismisses.
-        mListView.setDismissCallback(new de.timroes.android.listview.EnhancedListView.OnDismissCallback() {
+        mListView.setDismissCallback(new de.timroes.android.listview.OnDismissCallback() {
             /**
              * This method will be called when the user swiped a way or deleted it via
              * {@link de.timroes.android.listview.EnhancedListView#delete(int)}.
              *
              * @param listView The {@link EnhancedListView} the item has been deleted from.
              * @param position The position of the item to delete from your adapter.
-             * @return An {@link de.timroes.android.listview.EnhancedListView.Undoable}, if you want
+             * @return An {@link de.timroes.android.listview.Undoable}, if you want
              *      to give the user the possibility to undo the deletion.
              */
             @Override
-            public EnhancedListView.Undoable onDismiss(EnhancedListView listView, final int position) {
+            public Undoable onDismiss(EnhancedListView listView, final int position) {
 
                 final String item = (String) mAdapter.getItem(position);
                 mAdapter.remove(position);
-                return new EnhancedListView.Undoable() {
+                return new Undoable() {
                     @Override
                     public void undo() {
                         mAdapter.insert(position, item);
@@ -173,11 +178,11 @@ public class MainActivity extends ActionBarActivity {
     /**
      * Enables or disables a group of widgets in the settings drawer.
      *
-     * @param group The Group that should be disabled/enabled.
+     * @param group   The Group that should be disabled/enabled.
      * @param enabled Whether the group should be enabled or not.
      */
     private void enableControlGroup(ControlGroup group, boolean enabled) {
-        switch(group) {
+        switch (group) {
             case SWIPE_TO_DISMISS:
                 findViewById(R.id.pref_swipedirection).setEnabled(enabled);
                 findViewById(R.id.pref_swipelayout).setEnabled(enabled);
@@ -193,24 +198,36 @@ public class MainActivity extends ActionBarActivity {
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 
         // Set the UndoStyle, the user selected.
-        EnhancedListView.UndoStyle style;
-        switch(prefs.getInt(PREF_UNDO_STYLE, 0)) {
-            default: style = EnhancedListView.UndoStyle.SINGLE_POPUP; break;
-            case 1: style = EnhancedListView.UndoStyle.MULTILEVEL_POPUP; break;
-            case 2: style = EnhancedListView.UndoStyle.COLLAPSED_POPUP; break;
+        UndoStyle style;
+        switch (prefs.getInt(PREF_UNDO_STYLE, 0)) {
+            default:
+                style = UndoStyle.SINGLE_POPUP;
+                break;
+            case 1:
+                style = UndoStyle.MULTILEVEL_POPUP;
+                break;
+            case 2:
+                style = UndoStyle.COLLAPSED_POPUP;
+                break;
         }
         mListView.setUndoStyle(style);
 
         // Enable or disable Swipe to Dismiss
-        if(prefs.getBoolean(PREF_SWIPE_TO_DISMISS, false)) {
+        if (prefs.getBoolean(PREF_SWIPE_TO_DISMISS, false)) {
             mListView.enableSwipeToDismiss();
 
             // Set the swipe direction
-            EnhancedListView.SwipeDirection direction;
-            switch(prefs.getInt(PREF_SWIPE_DIRECTION, 0)) {
-                default: direction = EnhancedListView.SwipeDirection.BOTH; break;
-                case 1: direction = EnhancedListView.SwipeDirection.START; break;
-                case 2: direction = EnhancedListView.SwipeDirection.END; break;
+            SwipeDirection direction;
+            switch (prefs.getInt(PREF_SWIPE_DIRECTION, 0)) {
+                default:
+                    direction = SwipeDirection.BOTH;
+                    break;
+                case 1:
+                    direction = SwipeDirection.START;
+                    break;
+                case 2:
+                    direction = SwipeDirection.END;
+                    break;
             }
             mListView.setSwipeDirection(direction);
 
@@ -226,7 +243,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onStop() {
-        if(mListView != null) {
+        if (mListView != null) {
             mListView.discardUndo();
         }
         super.onStop();
@@ -253,7 +270,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
+        switch (item.getItemId()) {
             case R.id.action_settings:
                 mDrawerLayout.openDrawer(Gravity.RIGHT);
                 return true;
@@ -288,7 +305,7 @@ public class MainActivity extends ActionBarActivity {
 
         void resetItems() {
             mItems.clear();
-            for(int i = 1; i <= 40; i++) {
+            for (int i = 1; i <= 40; i++) {
                 mItems.add("Item " + i);
             }
             notifyDataSetChanged();
@@ -330,7 +347,7 @@ public class MainActivity extends ActionBarActivity {
          * Get the row id associated with the specified position in the list.
          *
          * @param position The position of the item within the adapter's data set whose row id we want.
-        * @return The id of the item at the specified position.
+         * @return The id of the item at the specified position.
          */
         @Override
         public long getItemId(int position) {
@@ -359,7 +376,7 @@ public class MainActivity extends ActionBarActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
 
             ViewHolder holder;
-            if(convertView == null) {
+            if (convertView == null) {
                 convertView = getLayoutInflater().inflate(R.layout.list_item, parent, false);
                 // Clicking the delete icon, will read the position of the item stored in
                 // the tag and delete it from the list. So we don't need to generate a new
@@ -368,7 +385,7 @@ public class MainActivity extends ActionBarActivity {
                 convertView.findViewById(R.id.action_delete).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mListView.delete(((ViewHolder)origView.getTag()).position);
+                        mListView.delete(((ViewHolder) origView.getTag()).position);
                     }
                 });
 
@@ -407,8 +424,8 @@ public class MainActivity extends ActionBarActivity {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setTitle(args.getInt(DIALOG_TITLE));
             builder.setSingleChoiceItems(
-                args.getInt(DIALOG_ITEMS_ID),
-                getPreferences(MODE_PRIVATE).getInt(args.getString(DIALOG_PREF_KEY), 0),
+                    args.getInt(DIALOG_ITEMS_ID),
+                    getPreferences(MODE_PRIVATE).getInt(args.getString(DIALOG_PREF_KEY), 0),
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
