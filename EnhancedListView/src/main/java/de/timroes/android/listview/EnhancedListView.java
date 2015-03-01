@@ -22,11 +22,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.AbsListView;
@@ -54,49 +52,124 @@ import java.util.TreeSet;
  *
  * @author Tim Roes <mail@timroes.de>
  */
-public class EnhancedListView extends ListView {
+public class EnhancedListView extends ListView implements EnhancedList {
 
-    private class UndoClickListener implements OnClickListener {
+    EnhancedListFlow enhancedListFlow = new EnhancedListFlow();
 
-        /**
-         * Called when a view has been clicked.
-         *
-         * @param v The view that was clicked.
-         */
-        @Override
-        public void onClick(View v) {
-            if (!mUndoActions.isEmpty()) {
-                switch (mUndoStyle) {
-                    case SINGLE_POPUP:
-                        mUndoActions.get(0).undo();
-                        mUndoActions.clear();
-                        break;
-                    case COLLAPSED_POPUP:
-                        Collections.reverse(mUndoActions);
-                        for (Undoable undo : mUndoActions) {
-                            undo.undo();
-                        }
-                        mUndoActions.clear();
-                        break;
-                    case MULTILEVEL_POPUP:
-                        mUndoActions.get(mUndoActions.size() - 1).undo();
-                        mUndoActions.remove(mUndoActions.size() - 1);
-                        break;
-                }
-            }
+    @Override
+    public void setSlop(float slop) {
+        this.slop = slop;
+    }
 
-            // Dismiss dialog or change text
-            if (mUndoActions.isEmpty()) {
-                if (mUndoPopup.isShowing()) {
-                    mUndoPopup.dismiss();
-                }
-            } else {
-                changePopupText();
-                changeButtonLabel();
-            }
+    @Override
+    public void setMinFlingVelocity(int minimumFlingVelocity) {
+        this.minFlingVelocity = minimumFlingVelocity;
+    }
 
-            mValidDelayedMsgId++;
+    @Override
+    public void setMaxFlingVelocity(int maximumFlingVelocity) {
+        this.maxFlingVelocity = maximumFlingVelocity;
+    }
+
+    @Override
+    public void setAnimationTime(int animationTime) {
+        this.animationTime = animationTime;
+    }
+
+    @Override
+    public void setUndoButton(Button undoButton) {
+        this.undoButton = undoButton;
+    }
+
+    @Override
+    public void incrementValidDelayedMsgId() {
+        this.validDelayedMsgId++;
+    }
+
+    @Override
+    public void setUndoPopupTextView(TextView undoPopup) {
+        this.undoPopupTextView = undoPopup;
+    }
+
+    @Override
+    public void setUndoPopup(PopupWindow undoPopup) {
+        this.undoPopup = undoPopup;
+    }
+
+    @Override
+    public void setScreenDensity(float screenDensity) {
+        this.screenDensity = screenDensity;
+    }
+
+    @Override
+    public void setSwipePaused(boolean swipePaused) {
+        this.swipePaused = swipePaused;
+    }
+
+    @Override
+    public boolean hasUndoActions() {
+        return !undoActions.isEmpty();
+    }
+
+    @Override
+    public UndoStyle getUndoStyle() {
+        return undoStyle;
+    }
+
+    @Override
+    public void undoFirstAction() {
+        undoActions.get(0).undo();
+        undoActions.clear();
+    }
+
+    @Override
+    public void undoAll() {
+        Collections.reverse(undoActions);
+        for (Undoable undo : undoActions) {
+            undo.undo();
         }
+        undoActions.clear();
+    }
+
+    @Override
+    public void undoLast() {
+        undoActions.get(undoActions.size() - 1).undo();
+        undoActions.remove(undoActions.size() - 1);
+    }
+
+    @Override
+    public boolean hasNoUndoActions() {
+        return undoActions.isEmpty();
+    }
+
+    @Override
+    public boolean isUndoPopupShowing() {
+        return undoPopup.isShowing();
+    }
+
+    @Override
+    public void dismissUndoPopup() {
+        undoPopup.dismiss();
+    }
+
+    @Override
+    public int undoActionsSize() {
+        return undoActions.size();
+    }
+
+    @Override
+    public void setUndoPopupText(String msg) {
+        this.undoPopupTextView.setText(msg);
+    }
+
+    @Override
+    public String getTitleFromUndoAction(int position) {
+        return undoActions.get(position).getTitle();
+    }
+
+    @Override
+    public void setUndoButtonText(String msg) {
+        this.undoButton.setText(msg);
     }
 
     private class HideUndoPopupHandler extends Handler {
@@ -106,17 +179,17 @@ public class EnhancedListView extends ListView {
          */
         @Override
         public void handleMessage(Message msg) {
-            if (msg.what == mValidDelayedMsgId) {
+            if (msg.what == validDelayedMsgId) {
                 discardUndo();
             }
         }
     }
 
     // Cached ViewConfiguration and system-wide constant values
-    private float mSlop;
-    private int mMinFlingVelocity;
-    private int mMaxFlingVelocity;
-    private long mAnimationTime;
+    private float slop;
+    private int minFlingVelocity;
+    private int maxFlingVelocity;
+    private long animationTime;
 
     private final Object[] mAnimationLock = new Object[0];
 
@@ -124,32 +197,32 @@ public class EnhancedListView extends ListView {
     private boolean mSwipeEnabled;
     private OnDismissCallback mDismissCallback;
     private OnShouldSwipeCallback mShouldSwipeCallback;
-    private UndoStyle mUndoStyle = UndoStyle.SINGLE_POPUP;
+    private UndoStyle undoStyle = UndoStyle.SINGLE_POPUP;
     private boolean mTouchBeforeAutoHide = true;
     private SwipeDirection mSwipeDirection = SwipeDirection.BOTH;
     private int mUndoHideDelay = 5000;
     private int mSwipingLayout;
 
-    private List<Undoable> mUndoActions = new ArrayList<Undoable>();
+    private List<Undoable> undoActions = new ArrayList<Undoable>();
     private SortedSet<PendingDismissData> mPendingDismisses = new TreeSet<PendingDismissData>();
     private List<View> mAnimatedViews = new LinkedList<View>();
     private int mDismissAnimationRefCount;
 
-    private boolean mSwipePaused;
+    private boolean swipePaused;
     private boolean mSwiping;
     private int mViewWidth = 1; // 1 and not 0 to prevent dividing by zero
     private View mSwipeDownView;
     private View mSwipeDownChild;
-    private TextView mUndoPopupTextView;
+    private TextView undoPopupTextView;
     private VelocityTracker mVelocityTracker;
     private float mDownX;
     private int mDownPosition;
-    private float mScreenDensity;
+    private float screenDensity;
 
-    private PopupWindow mUndoPopup;
-    private int mValidDelayedMsgId;
+    private PopupWindow undoPopup;
+    private int validDelayedMsgId;
     private Handler mHideUndoHandler = new HideUndoPopupHandler();
-    private Button mUndoButton;
+    private Button undoButton;
     // END Swipe-To-Dismiss
 
     /**
@@ -157,7 +230,7 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView(Context context) {
         super(context);
-        init(context);
+        enhancedListFlow.init(context, this);
     }
 
     /**
@@ -165,7 +238,7 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        enhancedListFlow.init(context, this);
     }
 
     /**
@@ -173,46 +246,7 @@ public class EnhancedListView extends ListView {
      */
     public EnhancedListView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init(context);
-    }
-
-    private void init(Context ctx) {
-
-        if (isInEditMode()) {
-            // Skip initializing when in edit mode (IDE preview).
-            return;
-        }
-        ViewConfiguration vc = ViewConfiguration.get(ctx);
-        mSlop = getResources().getDimension(R.dimen.elv_touch_slop);
-        mMinFlingVelocity = vc.getScaledMinimumFlingVelocity();
-        mMaxFlingVelocity = vc.getScaledMaximumFlingVelocity();
-        mAnimationTime = ctx.getResources().getInteger(
-                android.R.integer.config_shortAnimTime);
-
-        // Initialize undo popup
-        LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View undoView = inflater.inflate(R.layout.elv_undo_popup, null);
-        mUndoButton = (Button) undoView.findViewById(R.id.undo);
-        mUndoButton.setOnClickListener(new UndoClickListener());
-        mUndoButton.setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                // If the user touches the screen invalidate the current running delay by incrementing
-                // the valid message id. So this delay won't hide the undo popup anymore
-                mValidDelayedMsgId++;
-                return false;
-            }
-        });
-        mUndoPopupTextView = (TextView) undoView.findViewById(R.id.text);
-
-        mUndoPopup = new PopupWindow(undoView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
-        mUndoPopup.setAnimationStyle(R.style.elv_fade_animation);
-
-        mScreenDensity = getResources().getDisplayMetrics().density;
-        // END initialize undo popup
-
-        setOnScrollListener(makeScrollListener());
-
+        enhancedListFlow.init(context, this);
     }
 
     /**
@@ -285,7 +319,7 @@ public class EnhancedListView extends ListView {
      * @return This {@link de.timroes.android.listview.EnhancedListView}
      */
     public EnhancedListView setUndoStyle(UndoStyle undoStyle) {
-        mUndoStyle = undoStyle;
+        this.undoStyle = undoStyle;
         return this;
     }
 
@@ -358,12 +392,12 @@ public class EnhancedListView extends ListView {
      * break your data consistency.
      */
     public void discardUndo() {
-        for (Undoable undoable : mUndoActions) {
+        for (Undoable undoable : undoActions) {
             undoable.discard();
         }
-        mUndoActions.clear();
-        if (mUndoPopup.isShowing()) {
-            mUndoPopup.dismiss();
+        undoActions.clear();
+        if (undoPopup.isShowing()) {
+            undoPopup.dismiss();
         }
     }
 
@@ -423,7 +457,7 @@ public class EnhancedListView extends ListView {
         ViewPropertyAnimator.animate(view)
                 .translationX(toRightSide ? mViewWidth : -mViewWidth)
                 .alpha(0)
-                .setDuration(mAnimationTime)
+                .setDuration(animationTime)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -440,8 +474,8 @@ public class EnhancedListView extends ListView {
         }
 
         // Send a delayed message to hide popup
-        if (mTouchBeforeAutoHide && mUndoPopup.isShowing()) {
-            mHideUndoHandler.sendMessageDelayed(mHideUndoHandler.obtainMessage(mValidDelayedMsgId), mUndoHideDelay);
+        if (mTouchBeforeAutoHide && undoPopup.isShowing()) {
+            mHideUndoHandler.sendMessageDelayed(mHideUndoHandler.obtainMessage(validDelayedMsgId), mUndoHideDelay);
         }
 
         // Store width of this list for usage of swipe distance detection
@@ -451,7 +485,7 @@ public class EnhancedListView extends ListView {
 
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                if (mSwipePaused) {
+                if (swipePaused) {
                     return super.onTouchEvent(ev);
                 }
 
@@ -520,7 +554,7 @@ public class EnhancedListView extends ListView {
                 if (Math.abs(deltaX) > mViewWidth / 2 && mSwiping) {
                     dismiss = true;
                     dismissRight = deltaX > 0;
-                } else if (mMinFlingVelocity <= velocityX && velocityX <= mMaxFlingVelocity
+                } else if (minFlingVelocity <= velocityX && velocityX <= maxFlingVelocity
                         && velocityY < velocityX && mSwiping && isSwipeDirectionValid(mVelocityTracker.getXVelocity())
                         && deltaX >= mViewWidth * 0.2f) {
                     dismiss = true;
@@ -534,7 +568,7 @@ public class EnhancedListView extends ListView {
                     ViewPropertyAnimator.animate(mSwipeDownView)
                             .translationX(0)
                             .alpha(1)
-                            .setDuration(mAnimationTime)
+                            .setDuration(animationTime)
                             .setListener(null);
                 }
                 mVelocityTracker = null;
@@ -548,7 +582,7 @@ public class EnhancedListView extends ListView {
 
             case MotionEvent.ACTION_MOVE: {
 
-                if (mVelocityTracker == null || mSwipePaused) {
+                if (mVelocityTracker == null || swipePaused) {
                     break;
                 }
 
@@ -562,7 +596,7 @@ public class EnhancedListView extends ListView {
                         // otherwise swipe would not be working.
                         parent.requestDisallowInterceptTouchEvent(true);
                     }
-                    if (Math.abs(deltaX) > mSlop) {
+                    if (Math.abs(deltaX) > slop) {
                         mSwiping = true;
                         requestDisallowInterceptTouchEvent(true);
 
@@ -607,7 +641,7 @@ public class EnhancedListView extends ListView {
         final int originalLayoutHeight = lp.height;
 
         int originalHeight = listItemView.getHeight();
-        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
+        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(animationTime);
 
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -625,34 +659,34 @@ public class EnhancedListView extends ListView {
                     // No active animations, process all pending dismisses.
 
                     for (PendingDismissData dismiss : mPendingDismisses) {
-                        if (mUndoStyle == UndoStyle.SINGLE_POPUP) {
-                            for (Undoable undoable : mUndoActions) {
+                        if (undoStyle == UndoStyle.SINGLE_POPUP) {
+                            for (Undoable undoable : undoActions) {
                                 undoable.discard();
                             }
-                            mUndoActions.clear();
+                            undoActions.clear();
                         }
                         Undoable undoable = mDismissCallback.onDismiss(EnhancedListView.this, dismiss.position);
                         if (undoable != null) {
-                            mUndoActions.add(undoable);
+                            undoActions.add(undoable);
                         }
-                        mValidDelayedMsgId++;
+                        validDelayedMsgId++;
                     }
 
-                    if (!mUndoActions.isEmpty()) {
-                        changePopupText();
-                        changeButtonLabel();
+                    if (!undoActions.isEmpty()) {
+                        enhancedListFlow.changePopupText();
+                        enhancedListFlow.changeButtonLabel();
 
                         // Show undo popup
                         float yLocationOffset = getResources().getDimension(R.dimen.elv_undo_bottom_offset);
-                        mUndoPopup.setWidth((int) Math.min(mScreenDensity * 400, getWidth() * 0.9f));
-                        mUndoPopup.showAtLocation(EnhancedListView.this,
+                        undoPopup.setWidth((int) Math.min(screenDensity * 400, getWidth() * 0.9f));
+                        undoPopup.showAtLocation(EnhancedListView.this,
                                 Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM,
                                 0, (int) yLocationOffset);
 
                         // Queue the dismiss only if required
                         if (!mTouchBeforeAutoHide) {
                             // Send a delayed message to hide popup
-                            mHideUndoHandler.sendMessageDelayed(mHideUndoHandler.obtainMessage(mValidDelayedMsgId),
+                            mHideUndoHandler.sendMessageDelayed(mHideUndoHandler.obtainMessage(validDelayedMsgId),
                                     mUndoHideDelay);
                         }
                     }
@@ -681,53 +715,6 @@ public class EnhancedListView extends ListView {
 
         mPendingDismisses.add(new PendingDismissData(dismissPosition, dismissView, listItemView));
         animator.start();
-    }
-
-    /**
-     * Changes the text of the undo popup. If more then one item can be undone, the number of deleted
-     * items will be shown. If only one deletion can be undone, the title of this deletion (or a default
-     * string in case the title is {@code null}) will be shown.
-     */
-    private void changePopupText() {
-        String msg = null;
-        if (mUndoActions.size() > 1) {
-            msg = getResources().getString(R.string.elv_n_items_deleted, mUndoActions.size());
-        } else if (mUndoActions.size() >= 1) {
-            // Set title from single undoable or when no multiple deletion string
-            // is given
-            msg = mUndoActions.get(mUndoActions.size() - 1).getTitle();
-
-            if (msg == null) {
-                msg = getResources().getString(R.string.elv_item_deleted);
-            }
-        }
-        mUndoPopupTextView.setText(msg);
-    }
-
-    /**
-     * Changes the label of the undo button.
-     */
-    private void changeButtonLabel() {
-        String msg;
-        if (mUndoActions.size() > 1 && mUndoStyle == UndoStyle.COLLAPSED_POPUP) {
-            msg = getResources().getString(R.string.elv_undo_all);
-        } else {
-            msg = getResources().getString(R.string.elv_undo);
-        }
-        mUndoButton.setText(msg);
-    }
-
-    private OnScrollListener makeScrollListener() {
-        return new OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
-                mSwipePaused = scrollState == OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
-            }
-
-            @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-            }
-        };
     }
 
     /**
@@ -766,7 +753,7 @@ public class EnhancedListView extends ListView {
         super.onWindowVisibilityChanged(visibility);
 
 		/*
-		 * If the container window no longer visiable,
+         * If the container window no longer visiable,
 		 * dismiss visible undo popup window so it won't leak,
 		 * cos the container window will be destroyed before dismissing the popup window.
 		 */
