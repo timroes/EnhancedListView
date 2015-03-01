@@ -23,28 +23,29 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.RecyclerView;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import de.timroes.android.listview.EnhancedList;
+import de.timroes.android.listview.EnhancedListAdapter;
 import de.timroes.android.listview.EnhancedListView;
+import de.timroes.android.listview.EnhancedRecyclerListView;
 import de.timroes.android.listview.SwipeDirection;
 import de.timroes.android.listview.UndoStyle;
 import de.timroes.android.listview.Undoable;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivityRecycler extends ActionBarActivity {
 
     private enum ControlGroup {
         SWIPE_TO_DISMISS
@@ -55,8 +56,9 @@ public class MainActivity extends ActionBarActivity {
     private static final String PREF_SWIPE_DIRECTION = "de.timroes.android.listviewdemo.SWIPE_DIRECTION";
     private static final String PREF_SWIPE_LAYOUT = "de.timroes.android.listviewdemo.SWIPE_LAYOUT";
 
-    private EnhancedListAdapter mAdapter;
-    private EnhancedListView mListView;
+    private EnhancedRecyclerAdapter mAdapter;
+
+    private EnhancedRecyclerListView mListView;
     private DrawerLayout mDrawerLayout;
 
     private Bundle mUndoStylePref;
@@ -66,7 +68,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_recycler);
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
         mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
@@ -92,9 +94,9 @@ public class MainActivity extends ActionBarActivity {
 
         });
 
-        mListView = (EnhancedListView) findViewById(R.id.list);
+        mListView = (EnhancedRecyclerListView) findViewById(R.id.list);
 
-        mAdapter = new EnhancedListAdapter();
+        mAdapter = new EnhancedRecyclerAdapter();
         mAdapter.resetItems();
 
         mListView.setAdapter(mAdapter);
@@ -152,21 +154,6 @@ public class MainActivity extends ActionBarActivity {
                         mAdapter.insert(position, item);
                     }
                 };
-            }
-        });
-
-        // Show toast message on click and long click on list items.
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "Clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
-            }
-        });
-        mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "Long clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
-                return true;
             }
         });
 
@@ -300,7 +287,7 @@ public class MainActivity extends ActionBarActivity {
         picker.show(getSupportFragmentManager(), "SWIPE_DIR_PICKER");
     }
 
-    private class EnhancedListAdapter extends BaseAdapter {
+    private class EnhancedRecyclerAdapter extends EnhancedListAdapter<EnhancedRecyclerAdapter.ViewHolder> {
 
         private List<String> mItems = new ArrayList<String>();
 
@@ -314,34 +301,54 @@ public class MainActivity extends ActionBarActivity {
 
         public void remove(int position) {
             mItems.remove(position);
-            notifyDataSetChanged();
+            notifyItemRemoved(position);
         }
 
         public void insert(int position, String item) {
             mItems.add(position, item);
-            notifyDataSetChanged();
+            notifyItemInserted(position);
         }
 
-        /**
-         * How many items are in the data set represented by this Adapter.
-         *
-         * @return Count of items.
-         */
-        @Override
-        public int getCount() {
-            return mItems.size();
-        }
-
-        /**
-         * Get the data item associated with the specified position in the data set.
-         *
-         * @param position Position of the item whose data we want within the adapter's
-         *                 data set.
-         * @return The data at the specified position.
-         */
-        @Override
         public Object getItem(int position) {
             return mItems.get(position);
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.list_item, parent, false);
+
+            EnhancedRecyclerAdapter.ViewHolder vh = new ViewHolder(v);
+            return vh;
+        }
+
+        @Override
+        public void onBindViewHolder(EnhancedRecyclerAdapter.ViewHolder holder, final int position) {
+            holder.itemView.findViewById(R.id.action_delete).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mListView.delete(position);
+                }
+            });
+
+//            holder.itemView.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    Toast.makeText(MainActivity.this, "Clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+//                }
+//            });
+//
+//            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+//                @Override
+//                public boolean onLongClick(View v) {
+//                    Toast.makeText(MainActivity.this, "Long clicked on item " + mAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+//                    return true;
+//                }
+//            });
+
+            holder.textView = (TextView) holder.itemView.findViewById(R.id.text);
+            holder.position = position;
+            holder.textView.setText(mItems.get(position));
         }
 
         /**
@@ -355,59 +362,19 @@ public class MainActivity extends ActionBarActivity {
             return position;
         }
 
-        /**
-         * Get a View that displays the data at the specified position in the data set. You can either
-         * create a View manually or inflate it from an XML layout file. When the View is inflated, the
-         * parent View (GridView, ListView...) will apply default layout parameters unless you use
-         * {@link android.view.LayoutInflater#inflate(int, android.view.ViewGroup, boolean)}
-         * to specify a root view and to prevent attachment to the root.
-         *
-         * @param position    The position of the item within the adapter's data set of the item whose view
-         *                    we want.
-         * @param convertView The old view to reuse, if possible. Note: You should check that this view
-         *                    is non-null and of an appropriate type before using. If it is not possible to convert
-         *                    this view to display the correct data, this method can create a new view.
-         *                    Heterogeneous lists can specify their number of view types, so that this View is
-         *                    always of the right type (see {@link #getViewTypeCount()} and
-         *                    {@link #getItemViewType(int)}).
-         * @param parent      The parent that this view will eventually be attached to
-         * @return A View corresponding to the data at the specified position.
-         */
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            ViewHolder holder;
-            if (convertView == null) {
-                convertView = getLayoutInflater().inflate(R.layout.list_item, parent, false);
-                // Clicking the delete icon, will read the position of the item stored in
-                // the tag and delete it from the list. So we don't need to generate a new
-                // onClickListener every time the content of this view changes.
-                final View origView = convertView;
-                convertView.findViewById(R.id.action_delete).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mListView.delete(((ViewHolder) origView.getTag()).position);
-                    }
-                });
-
-                holder = new ViewHolder();
-                assert convertView != null;
-                holder.mTextView = (TextView) convertView.findViewById(R.id.text);
-
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-
-            holder.position = position;
-            holder.mTextView.setText(mItems.get(position));
-
-            return convertView;
+        public int getItemCount() {
+            return mItems.size();
         }
 
-        private class ViewHolder {
-            TextView mTextView;
-            int position;
+        public class ViewHolder extends RecyclerView.ViewHolder {
+
+            public TextView textView;
+            public int position;
+
+            public ViewHolder(View itemView) {
+                super(itemView);
+            }
         }
 
     }

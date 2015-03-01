@@ -8,7 +8,7 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.AppCompat.Light">
         <activity
-            android:name="de.timroes.android.listviewdemo.MainActivity"
+            android:name="de.timroes.android.listviewdemo.MainActivityRecycler"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

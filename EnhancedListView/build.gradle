@@ -6,6 +6,8 @@ repositories {
 
 dependencies {
     compile 'com.android.support:support-v4:19.0.+'
+    compile 'com.android.support:appcompat-v7:20.+'
+    compile 'com.android.support:recyclerview-v7:21.0.0'
     compile 'com.nineoldandroids:library:2.4.0'
 }
 
