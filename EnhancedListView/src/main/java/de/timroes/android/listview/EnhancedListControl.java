@@ -14,16 +14,6 @@ public interface EnhancedListControl extends EnhancedList {
 
     boolean isInEditMode();
 
-    void setSlop(float dimension);
-
-    float getSlop();
-
-    void setMinFlingVelocity(int scaledMinimumFlingVelocity);
-
-    void setMaxFlingVelocity(int scaledMaximumFlingVelocity);
-
-    void setAnimationTime(int integer);
-
     void setUndoButton(Button undoButton);
 
     void incrementValidDelayedMsgId();
@@ -36,8 +26,6 @@ public interface EnhancedListControl extends EnhancedList {
 
     void setOnScrollListener(AbsListView.OnScrollListener onScrollListener);
 
-    void setSwipePaused(boolean b);
-
     boolean hasUndoActions();
 
     UndoStyle getUndoStyle();
@@ -48,8 +36,6 @@ public interface EnhancedListControl extends EnhancedList {
 
     void undoLast();
 
-    boolean hasNoUndoActions();
-
     boolean isUndoPopupShowing();
 
     void dismissUndoPopup();
@@ -58,7 +44,7 @@ public interface EnhancedListControl extends EnhancedList {
 
     void setUndoPopupText(String msg);
 
-    String getTitleFromUndoAction(int i);
+    String getTitleFromUndoAction(int position);
 
     void setUndoButtonText(String msg);
 
@@ -84,12 +70,6 @@ public interface EnhancedListControl extends EnhancedList {
 
     void hidePopupMessageDelayed();
 
-    int getViewWidth();
-
-    void updateViewWidth();
-
-    boolean getSwipePaused();
-
     int getChildCount();
 
     void getLocationOnScreen(int[] listViewCoords);
@@ -98,29 +78,13 @@ public interface EnhancedListControl extends EnhancedList {
 
     View getChildAt(int i);
 
-    void setSwipeDownView(View swipingView);
-
-    void setSwipeDownChild(View child);
-
-    boolean hasSwipeDownView();
-
-    int getPositionSwipeDownView();
+    int getPositionSwipeDownView(View swipeDownView);
 
     boolean hasSwipeCallback();
 
     boolean onShouldSwipe(int position);
 
-    float getMinFlingVelocity();
-
-    float getMaxFlingVelocity();
-
     boolean isSwipeDirectionValid(float xVelocity);
-
-    View getSwipeDownView();
-
-    View getSwipeDownChild();
-
-    long getAnimationTime();
 
     ViewParent getParent();
 
@@ -139,4 +103,8 @@ public interface EnhancedListControl extends EnhancedList {
     void clearPendingDismissed();
 
     void addPendingDismiss(PendingDismissData pendingDismissData);
+
+    boolean shouldPrepareAnimation(View view);
+
+    int getWidth();
 }

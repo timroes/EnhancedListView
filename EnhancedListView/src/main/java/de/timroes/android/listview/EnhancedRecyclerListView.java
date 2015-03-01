@@ -32,31 +32,6 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public void setSlop(float dimension) {
-
-    }
-
-    @Override
-    public float getSlop() {
-        return 0;
-    }
-
-    @Override
-    public void setMinFlingVelocity(int scaledMinimumFlingVelocity) {
-
-    }
-
-    @Override
-    public void setMaxFlingVelocity(int scaledMaximumFlingVelocity) {
-
-    }
-
-    @Override
-    public void setAnimationTime(int integer) {
-
-    }
-
-    @Override
     public void setUndoButton(Button undoButton) {
 
     }
@@ -87,11 +62,6 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public void setSwipePaused(boolean b) {
-
-    }
-
-    @Override
     public boolean hasUndoActions() {
         return false;
     }
@@ -117,11 +87,6 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public boolean hasNoUndoActions() {
-        return false;
-    }
-
-    @Override
     public boolean isUndoPopupShowing() {
         return false;
     }
@@ -142,7 +107,7 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public String getTitleFromUndoAction(int i) {
+    public String getTitleFromUndoAction(int position) {
         return null;
     }
 
@@ -207,42 +172,12 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public int getViewWidth() {
-        return 0;
-    }
-
-    @Override
-    public void updateViewWidth() {
-
-    }
-
-    @Override
-    public boolean getSwipePaused() {
-        return false;
-    }
-
-    @Override
     public int getHeaderViewsCount() {
         return 0;
     }
 
     @Override
-    public void setSwipeDownView(View swipingView) {
-
-    }
-
-    @Override
-    public void setSwipeDownChild(View child) {
-
-    }
-
-    @Override
-    public boolean hasSwipeDownView() {
-        return false;
-    }
-
-    @Override
-    public int getPositionSwipeDownView() {
+    public int getPositionSwipeDownView(View swipeDownView) {
         return 0;
     }
 
@@ -257,33 +192,8 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
-    public float getMinFlingVelocity() {
-        return 0;
-    }
-
-    @Override
-    public float getMaxFlingVelocity() {
-        return 0;
-    }
-
-    @Override
     public boolean isSwipeDirectionValid(float xVelocity) {
         return false;
-    }
-
-    @Override
-    public View getSwipeDownView() {
-        return null;
-    }
-
-    @Override
-    public View getSwipeDownChild() {
-        return null;
-    }
-
-    @Override
-    public long getAnimationTime() {
-        return 0;
     }
 
     @Override
@@ -319,6 +229,11 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     @Override
     public void addPendingDismiss(PendingDismissData pendingDismissData) {
 
+    }
+
+    @Override
+    public boolean shouldPrepareAnimation(View view) {
+        return false;
     }
 
     @Override

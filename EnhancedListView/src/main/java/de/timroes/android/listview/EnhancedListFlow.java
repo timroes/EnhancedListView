@@ -25,6 +25,13 @@ public class EnhancedListFlow {
     private Context context;
     private EnhancedListControl enhancedList;
 
+    private float slop;
+    private int minFlingVelocity;
+    private int maxFlingVelocity;
+    private int animationTime;
+    private int viewWidth = 1; // 1 and not 0 to prevent dividing by zero
+    private boolean swipePaused;
+
     public void init(Context ctx, final EnhancedListControl enhancedList) {
         this.context = ctx;
         this.enhancedList = enhancedList;
@@ -33,14 +40,14 @@ public class EnhancedListFlow {
             // Skip initializing when in edit mode (IDE preview).
             return;
         }
+
         ViewConfiguration vc = ViewConfiguration.get(ctx);
-        enhancedList.setSlop(ctx.getResources().getDimension(R.dimen.elv_touch_slop));
+        slop = ctx.getResources().getDimension(R.dimen.elv_touch_slop);
+        minFlingVelocity = vc.getScaledMinimumFlingVelocity();
+        maxFlingVelocity = vc.getScaledMaximumFlingVelocity();
 
-        enhancedList.setMinFlingVelocity(vc.getScaledMinimumFlingVelocity());
-        enhancedList.setMaxFlingVelocity(vc.getScaledMaximumFlingVelocity());
-
-        enhancedList.setAnimationTime(ctx.getResources().getInteger(
-                android.R.integer.config_shortAnimTime));
+        animationTime = ctx.getResources().getInteger(
+                android.R.integer.config_shortAnimTime);
 
         // Initialize undo popup
         LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -75,7 +82,7 @@ public class EnhancedListFlow {
         return new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                enhancedList.setSwipePaused(scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL);
+                swipePaused = scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
             }
 
             @Override
@@ -162,10 +169,36 @@ public class EnhancedListFlow {
         enhancedList.slideOutView(view, childView, position, true);
     }
 
+    /**
+     * Slide out a view to the right or left of the list. After the animation has finished, the
+     * view will be dismissed by calling {@link #performDismiss(android.view.View, android.view.View, int)}.
+     *
+     * @param view        The view, that should be slided out.
+     * @param childView   The whole view of the list item.
+     * @param position    The item position of the item.
+     * @param toRightSide Whether it should slide out to the right side.
+     */
+    public void slideOutView(final View view, final View childView, final int position, boolean toRightSide) {
+        if (enhancedList.shouldPrepareAnimation(view)) {
+            ViewPropertyAnimator.animate(view)
+                    .translationX(toRightSide ? viewWidth : -viewWidth)
+                    .alpha(0)
+                    .setDuration(animationTime)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            performDismiss(view, childView, position);
+                        }
+                    });
+        }
+    }
+
     private float downX;
     private int downPosition;
     private boolean swiping;
     private VelocityTracker velocityTracker;
+    private View swipeDownView;
+    private View swipeDownChild;
 
     public boolean onTouchEvent(MotionEvent ev) {
 
@@ -179,13 +212,13 @@ public class EnhancedListFlow {
         }
 
         // Store width of this list for usage of swipe distance detection
-        if (enhancedList.getViewWidth() < 2) {
-            enhancedList.updateViewWidth();
+        if (viewWidth < 2) {
+            viewWidth = enhancedList.getWidth();
         }
 
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                if (enhancedList.getSwipePaused()) {
+                if (swipePaused) {
                     return enhancedList.superOnTouchEvent(ev);
                 }
 
@@ -208,22 +241,22 @@ public class EnhancedListFlow {
                             if (enhancedList.hasSwipingLayout()) {
                                 View swipingView = child.findViewById(enhancedList.getSwipingLayout());
                                 if (swipingView != null) {
-                                    enhancedList.setSwipeDownView(swipingView);
-                                    enhancedList.setSwipeDownChild(child);
+                                    swipeDownView = swipingView;
+                                    swipeDownChild = child;
                                     break;
                                 }
                             }
                             // If no swiping layout has been found, swipe the whole child
-                            enhancedList.setSwipeDownView(child);
-                            enhancedList.setSwipeDownChild(child);
+                            swipeDownView = child;
+                            swipeDownChild = child;
                             break;
                         }
                     }
                 }
 
-                if (enhancedList.hasSwipeDownView()) {
+                if (swipeDownView != null) {
                     // test if the item should be swiped
-                    int position = enhancedList.getPositionSwipeDownView();
+                    int position = enhancedList.getPositionSwipeDownView(swipeDownView);
                     if ((!enhancedList.hasSwipeCallback()) ||
                             enhancedList.onShouldSwipe(position)) {
                         downX = ev.getRawX();
@@ -232,8 +265,8 @@ public class EnhancedListFlow {
                         velocityTracker.addMovement(ev);
                     } else {
                         // set back to null to revert swiping
-                        enhancedList.setSwipeDownView(null);
-                        enhancedList.setSwipeDownChild(null);
+                        swipeDownView = null;
+                        swipeDownChild = null;
                     }
                 }
                 enhancedList.superOnTouchEvent(ev);
@@ -252,30 +285,30 @@ public class EnhancedListFlow {
                 float velocityY = Math.abs(velocityTracker.getYVelocity());
                 boolean dismiss = false;
                 boolean dismissRight = false;
-                if (Math.abs(deltaX) > enhancedList.getViewWidth() / 2 && swiping) {
+                if (Math.abs(deltaX) > viewWidth / 2 && swiping) {
                     dismiss = true;
                     dismissRight = deltaX > 0;
-                } else if (enhancedList.getMinFlingVelocity() <= velocityX && velocityX <= enhancedList.getMaxFlingVelocity()
+                } else if (minFlingVelocity <= velocityX && velocityX <= maxFlingVelocity
                         && velocityY < velocityX && swiping && enhancedList.isSwipeDirectionValid(velocityTracker.getXVelocity())
-                        && deltaX >= enhancedList.getViewWidth() * 0.2f) {
+                        && deltaX >= viewWidth * 0.2f) {
                     dismiss = true;
                     dismissRight = velocityTracker.getXVelocity() > 0;
                 }
                 if (dismiss) {
                     // dismiss
-                    enhancedList.slideOutView(enhancedList.getSwipeDownView(), enhancedList.getSwipeDownChild(), downPosition, dismissRight);
+                    enhancedList.slideOutView(swipeDownView, swipeDownChild, downPosition, dismissRight);
                 } else if (swiping) {
                     // Swipe back to regular position
-                    ViewPropertyAnimator.animate(enhancedList.getSwipeDownView())
+                    ViewPropertyAnimator.animate(swipeDownView)
                             .translationX(0)
                             .alpha(1)
-                            .setDuration(enhancedList.getAnimationTime())
+                            .setDuration(animationTime)
                             .setListener(null);
                 }
                 velocityTracker = null;
                 downX = 0;
-                enhancedList.setSwipeDownView(null);
-                enhancedList.setSwipeDownChild(null);
+                swipeDownView = null;
+                swipeDownChild = null;
                 downPosition = AbsListView.INVALID_POSITION;
                 swiping = false;
                 break;
@@ -283,7 +316,7 @@ public class EnhancedListFlow {
 
             case MotionEvent.ACTION_MOVE: {
 
-                if (velocityTracker == null || enhancedList.getSwipePaused()) {
+                if (velocityTracker == null || swipePaused) {
                     break;
                 }
 
@@ -297,7 +330,7 @@ public class EnhancedListFlow {
                         // otherwise swipe would not be working.
                         parent.requestDisallowInterceptTouchEvent(true);
                     }
-                    if (Math.abs(deltaX) > enhancedList.getSlop()) {
+                    if (Math.abs(deltaX) > slop) {
                         swiping = true;
                         enhancedList.requestDisallowInterceptTouchEvent(true);
 
@@ -316,9 +349,9 @@ public class EnhancedListFlow {
                 }
 
                 if (swiping) {
-                    ViewHelper.setTranslationX(enhancedList.getSwipeDownView(), deltaX);
-                    ViewHelper.setAlpha(enhancedList.getSwipeDownView(), Math.max(0f, Math.min(1f,
-                            1f - 2f * Math.abs(deltaX) / enhancedList.getViewWidth())));
+                    ViewHelper.setTranslationX(swipeDownView, deltaX);
+                    ViewHelper.setAlpha(swipeDownView, Math.max(0f, Math.min(1f,
+                            1f - 2f * Math.abs(deltaX) / viewWidth)));
                     return true;
                 }
                 break;
@@ -342,7 +375,7 @@ public class EnhancedListFlow {
         final int originalLayoutHeight = lp.height;
 
         int originalHeight = listItemView.getHeight();
-        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(enhancedList.getAnimationTime());
+        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(animationTime);
 
         animator.addListener(new AnimatorListenerAdapter() {
             @Override

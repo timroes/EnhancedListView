@@ -34,7 +34,7 @@ class UndoClickListener implements View.OnClickListener {
         }
 
         // Dismiss dialog or change text
-        if (enhancedList.hasNoUndoActions()) {
+        if (!enhancedList.hasUndoActions()) {
             if (enhancedList.isUndoPopupShowing()) {
                 enhancedList.dismissUndoPopup();
             }
@@ -45,6 +45,5 @@ class UndoClickListener implements View.OnClickListener {
 
         enhancedList.incrementValidDelayedMsgId();
     }
-
 
 }

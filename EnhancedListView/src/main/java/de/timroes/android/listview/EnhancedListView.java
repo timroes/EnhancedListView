@@ -28,10 +28,6 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import com.nineoldandroids.animation.Animator;
-import com.nineoldandroids.animation.AnimatorListenerAdapter;
-import com.nineoldandroids.view.ViewPropertyAnimator;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -48,31 +44,29 @@ import java.util.TreeSet;
 public class EnhancedListView extends ListView implements EnhancedListControl {
 
     EnhancedListFlow enhancedListFlow = new EnhancedListFlow();
+    private final Object[] animationLock = new Object[0];
 
-    @Override
-    public void setSlop(float slop) {
-        this.slop = slop;
-    }
+    private boolean swipeEnabled;
+    private OnDismissCallback dismissCallback;
+    private OnShouldSwipeCallback shouldSwipeCallback;
+    private UndoStyle undoStyle = UndoStyle.SINGLE_POPUP;
+    private boolean touchBeforeAutoHide = true;
+    private SwipeDirection swipeDirection = SwipeDirection.BOTH;
+    private int undoHideDelay = 5000;
+    private int swipingLayout;
 
-    @Override
-    public float getSlop() {
-        return this.slop;
-    }
+    private List<Undoable> undoActions = new ArrayList<Undoable>();
+    private SortedSet<PendingDismissData> pendingDismisses = new TreeSet<PendingDismissData>();
+    private List<View> animatedViews = new LinkedList<View>();
+    private int dismissAnimationRefCount;
 
-    @Override
-    public void setMinFlingVelocity(int minimumFlingVelocity) {
-        this.minFlingVelocity = minimumFlingVelocity;
-    }
+    private TextView undoPopupTextView;
+    private float screenDensity;
 
-    @Override
-    public void setMaxFlingVelocity(int maximumFlingVelocity) {
-        this.maxFlingVelocity = maximumFlingVelocity;
-    }
-
-    @Override
-    public void setAnimationTime(int animationTime) {
-        this.animationTime = animationTime;
-    }
+    private PopupWindow undoPopup;
+    private int validDelayedMsgId;
+    private Handler hideUndoHandler = new HideUndoPopupHandler();
+    private Button undoButton;
 
     @Override
     public void setUndoButton(Button undoButton) {
@@ -97,11 +91,6 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     @Override
     public void setScreenDensity(float screenDensity) {
         this.screenDensity = screenDensity;
-    }
-
-    @Override
-    public void setSwipePaused(boolean swipePaused) {
-        this.swipePaused = swipePaused;
     }
 
     @Override
@@ -133,11 +122,6 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     public void undoLast() {
         undoActions.get(undoActions.size() - 1).undo();
         undoActions.remove(undoActions.size() - 1);
-    }
-
-    @Override
-    public boolean hasNoUndoActions() {
-        return undoActions.isEmpty();
     }
 
     @Override
@@ -202,42 +186,6 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
             }
         }
     }
-
-    // Cached ViewConfiguration and system-wide constant values
-    private float slop;
-    private int minFlingVelocity;
-    private int maxFlingVelocity;
-    private long animationTime;
-
-    private final Object[] animationLock = new Object[0];
-
-    // Swipe-To-Dismiss
-    private boolean swipeEnabled;
-    private OnDismissCallback dismissCallback;
-    private OnShouldSwipeCallback shouldSwipeCallback;
-    private UndoStyle undoStyle = UndoStyle.SINGLE_POPUP;
-    private boolean touchBeforeAutoHide = true;
-    private SwipeDirection swipeDirection = SwipeDirection.BOTH;
-    private int undoHideDelay = 5000;
-    private int swipingLayout;
-
-    private List<Undoable> undoActions = new ArrayList<Undoable>();
-    private SortedSet<PendingDismissData> pendingDismisses = new TreeSet<PendingDismissData>();
-    private List<View> animatedViews = new LinkedList<View>();
-    private int dismissAnimationRefCount;
-
-    private boolean swipePaused;
-    private int viewWidth = 1; // 1 and not 0 to prevent dividing by zero
-    private View swipeDownView;
-    private View swipeDownChild;
-    private TextView undoPopupTextView;
-    private float screenDensity;
-
-    private PopupWindow undoPopup;
-    private int validDelayedMsgId;
-    private Handler hideUndoHandler = new HideUndoPopupHandler();
-    private Button undoButton;
-    // END Swipe-To-Dismiss
 
     /**
      * {@inheritDoc}
@@ -438,26 +386,7 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
      * @param toRightSide Whether it should slide out to the right side.
      */
     public void slideOutView(final View view, final View childView, final int position, boolean toRightSide) {
-
-        // Only start new animation, if this view isn't already animated (too fast swiping bug)
-        synchronized (animationLock) {
-            if (animatedViews.contains(view)) {
-                return;
-            }
-            ++dismissAnimationRefCount;
-            animatedViews.add(view);
-        }
-
-        ViewPropertyAnimator.animate(view)
-                .translationX(toRightSide ? viewWidth : -viewWidth)
-                .alpha(0)
-                .setDuration(animationTime)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        performDismiss(view, childView, position);
-                    }
-                });
+        enhancedListFlow.slideOutView(view, childView, position, toRightSide);
     }
 
     @Override
@@ -496,37 +425,7 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     }
 
     @Override
-    public int getViewWidth() {
-        return viewWidth;
-    }
-
-    @Override
-    public void updateViewWidth() {
-        viewWidth = getWidth();
-    }
-
-    @Override
-    public boolean getSwipePaused() {
-        return swipePaused;
-    }
-
-    @Override
-    public void setSwipeDownView(View swipingView) {
-        swipeDownView = swipingView;
-    }
-
-    @Override
-    public void setSwipeDownChild(View child) {
-        swipeDownChild = child;
-    }
-
-    @Override
-    public boolean hasSwipeDownView() {
-        return swipeDownView != null;
-    }
-
-    @Override
-    public int getPositionSwipeDownView() {
+    public int getPositionSwipeDownView(View swipeDownView) {
         return getPositionForView(swipeDownView) - getHeaderViewsCount();
     }
 
@@ -538,16 +437,6 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     @Override
     public boolean onShouldSwipe(int position) {
         return shouldSwipeCallback.onShouldSwipe(this, position);
-    }
-
-    @Override
-    public float getMinFlingVelocity() {
-        return minFlingVelocity;
-    }
-
-    @Override
-    public float getMaxFlingVelocity() {
-        return maxFlingVelocity;
     }
 
     @Override
@@ -600,21 +489,6 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     }
 
     @Override
-    public View getSwipeDownView() {
-        return swipeDownView;
-    }
-
-    @Override
-    public View getSwipeDownChild() {
-        return swipeDownChild;
-    }
-
-    @Override
-    public long getAnimationTime() {
-        return animationTime;
-    }
-
-    @Override
     public boolean removeAnimation(View dismissView) {
         synchronized (animationLock) {
             --dismissAnimationRefCount;
@@ -655,6 +529,19 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     @Override
     public void addPendingDismiss(PendingDismissData pendingDismissData) {
         pendingDismisses.add(pendingDismissData);
+    }
+
+    @Override
+    public boolean shouldPrepareAnimation(View view) {
+        // Only start new animation, if this view isn't already animated (too fast swiping bug)
+        synchronized (animationLock) {
+            if (animatedViews.contains(view)) {
+                return false;
+            }
+            ++dismissAnimationRefCount;
+            animatedViews.add(view);
+            return true;
+        }
     }
 
     @Override
