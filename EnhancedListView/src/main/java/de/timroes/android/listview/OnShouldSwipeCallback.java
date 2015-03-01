@@ -17,6 +17,6 @@ public interface OnShouldSwipeCallback {
      * @param position The position of the item to swipe in your adapter.
      * @return Whether the item should be swiped or not.
      */
-    boolean onShouldSwipe(EnhancedListView listView, int position);
+    boolean onShouldSwipe(EnhancedList listView, int position);
 
 }

@@ -2,6 +2,7 @@ package de.timroes.android.listview;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -78,15 +79,16 @@ public class EnhancedListFlow {
         enhancedList.setOnScrollListener(makeScrollListener(enhancedList));
     }
 
-    private AbsListView.OnScrollListener makeScrollListener(final EnhancedListControl enhancedList) {
-        return new AbsListView.OnScrollListener() {
+    private OnScrollListener makeScrollListener(final EnhancedListControl enhancedList) {
+        return new OnScrollListener() {
             @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
-                swipePaused = scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
-            }
-
-            @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            public void onScrollStateChanged(View view, int scrollState) {
+                if (view instanceof AbsListView) {
+                    swipePaused = (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL);
+                }
+                if (view instanceof RecyclerView) {
+                    swipePaused = (scrollState == RecyclerView.SCROLL_STATE_DRAGGING);
+                }
             }
         };
     }
@@ -256,7 +258,7 @@ public class EnhancedListFlow {
 
                 if (swipeDownView != null) {
                     // test if the item should be swiped
-                    int position = enhancedList.getPositionSwipeDownView(swipeDownView);
+                    int position = enhancedList.getPositionSwipeDownView(swipeDownChild);
                     if ((!enhancedList.hasSwipeCallback()) ||
                             enhancedList.onShouldSwipe(position)) {
                         downX = ev.getRawX();

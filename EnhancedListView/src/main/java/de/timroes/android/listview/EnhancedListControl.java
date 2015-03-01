@@ -24,7 +24,7 @@ public interface EnhancedListControl extends EnhancedList {
 
     void setScreenDensity(float density);
 
-    void setOnScrollListener(AbsListView.OnScrollListener onScrollListener);
+    void setOnScrollListener(OnScrollListener onScrollListener);
 
     boolean hasUndoActions();
 

@@ -9,21 +9,23 @@ public interface EnhancedList {
 
     void discardUndo();
 
-    EnhancedListView enableSwipeToDismiss();
+    EnhancedList enableSwipeToDismiss();
 
-    EnhancedListView disableSwipeToDismiss();
+    EnhancedList disableSwipeToDismiss();
 
-    EnhancedListView setDismissCallback(OnDismissCallback dismissCallback);
+    EnhancedList setDismissCallback(OnDismissCallback dismissCallback);
 
-    EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback);
+    EnhancedList setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback);
 
-    EnhancedListView setUndoStyle(UndoStyle undoStyle);
+    EnhancedList setUndoStyle(UndoStyle undoStyle);
 
-    EnhancedListView setUndoHideDelay(int hideDelay);
+    EnhancedList setUndoHideDelay(int hideDelay);
 
-    EnhancedListView setRequireTouchBeforeDismiss(boolean touchBeforeDismiss);
+    EnhancedList setRequireTouchBeforeDismiss(boolean touchBeforeDismiss);
 
-    EnhancedListView setSwipeDirection(SwipeDirection direction);
+    EnhancedList setSwipeDirection(SwipeDirection direction);
 
-    EnhancedListView setSwipingLayout(int swipingLayoutId);
+    EnhancedList setSwipingLayout(int swipingLayoutId);
+
+    void delete(int position);
 }

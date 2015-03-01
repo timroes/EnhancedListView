@@ -29,6 +29,6 @@ public interface OnDismissCallback {
      * @return An {@link de.timroes.android.listview.Undoable}, if you want
      *      to give the user the possibility to undo the deletion.
      */
-    Undoable onDismiss(EnhancedListView listView, int position);
+    Undoable onDismiss(EnhancedList listView, int position);
 
 }

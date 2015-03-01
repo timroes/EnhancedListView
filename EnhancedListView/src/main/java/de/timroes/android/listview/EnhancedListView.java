@@ -23,6 +23,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.PopupWindow;
@@ -91,6 +92,21 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     @Override
     public void setScreenDensity(float screenDensity) {
         this.screenDensity = screenDensity;
+    }
+
+    @Override
+    public void setOnScrollListener(final de.timroes.android.listview.OnScrollListener onScrollListener) {
+        this.setOnScrollListener(new OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                onScrollListener.onScrollStateChanged(view, scrollState);
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+            }
+        });
     }
 
     @Override
@@ -516,7 +532,7 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     @Override
     public void showUndoPopup(float yLocationOffset) {
         undoPopup.setWidth((int) Math.min(screenDensity * 400, getWidth() * 0.9f));
-        undoPopup.showAtLocation(EnhancedListView.this,
+        undoPopup.showAtLocation(this,
                 Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM,
                 0, (int) yLocationOffset);
     }
