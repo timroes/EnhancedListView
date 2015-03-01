@@ -37,7 +37,7 @@ public abstract class Undoable {
     /**
      * Discard the undo, meaning the user has no longer the possibility to undo the deletion.
      * Implement this, to finally delete your stuff from permanent storages like databases
-     * (whereas in {@link de.timroes.android.listview.EnhancedListView.OnDismissCallback#onKeyDown(int, android.view.KeyEvent)}
+     * (whereas in {@link de.timroes.android.listview.OnDismissCallback#onDismiss(EnhancedListView, int)}
      * you should only remove it from the list adapter).
      */
     public void discard() { }

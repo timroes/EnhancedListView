@@ -5,9 +5,9 @@ import android.view.View;
 class UndoClickListener implements View.OnClickListener {
 
     private EnhancedListFlow enhancedListFlow;
-    private EnhancedList enhancedList;
+    private EnhancedListControl enhancedList;
 
-    public UndoClickListener(EnhancedList enhancedList, EnhancedListFlow enhancedListFlow) {
+    public UndoClickListener(EnhancedListControl enhancedList, EnhancedListFlow enhancedListFlow) {
         this.enhancedList = enhancedList;
         this.enhancedListFlow = enhancedListFlow;
     }
@@ -42,7 +42,7 @@ class UndoClickListener implements View.OnClickListener {
             enhancedListFlow.changePopupText();
             enhancedListFlow.changeButtonLabel();
         }
-        
+
         enhancedList.incrementValidDelayedMsgId();
     }
 

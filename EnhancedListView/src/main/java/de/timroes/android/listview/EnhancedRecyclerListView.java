@@ -3,12 +3,16 @@ package de.timroes.android.listview;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-public class EnhancedRecyclerListView extends RecyclerView implements EnhancedList {
+import java.util.SortedSet;
+
+public class EnhancedRecyclerListView extends RecyclerView implements EnhancedListControl {
 
     EnhancedListFlow enhancedListFlow = new EnhancedListFlow();
 
@@ -30,6 +34,11 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     @Override
     public void setSlop(float dimension) {
 
+    }
+
+    @Override
+    public float getSlop() {
+        return 0;
     }
 
     @Override
@@ -140,5 +149,225 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     @Override
     public void setUndoButtonText(String msg) {
 
+    }
+
+    @Override
+    public void discardAllUndoables() {
+
+    }
+
+    @Override
+    public boolean hasDismissCallback() {
+        return false;
+    }
+
+    @Override
+    public int getItemsCount() {
+        return 0;
+    }
+
+    @Override
+    public void slideOutView(View view, View childView, int position, boolean b) {
+
+    }
+
+    @Override
+    public boolean hasSwipingLayout() {
+        return false;
+    }
+
+    @Override
+    public int getSwipingLayout() {
+        return 0;
+    }
+
+    @Override
+    public View getChild(int position) {
+        return null;
+    }
+
+    @Override
+    public boolean superOnTouchEvent(MotionEvent ev) {
+        return false;
+    }
+
+    @Override
+    public boolean isSwipeEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean getTouchBeforeAutoHide() {
+        return false;
+    }
+
+    @Override
+    public void hidePopupMessageDelayed() {
+
+    }
+
+    @Override
+    public int getViewWidth() {
+        return 0;
+    }
+
+    @Override
+    public void updateViewWidth() {
+
+    }
+
+    @Override
+    public boolean getSwipePaused() {
+        return false;
+    }
+
+    @Override
+    public int getHeaderViewsCount() {
+        return 0;
+    }
+
+    @Override
+    public void setSwipeDownView(View swipingView) {
+
+    }
+
+    @Override
+    public void setSwipeDownChild(View child) {
+
+    }
+
+    @Override
+    public boolean hasSwipeDownView() {
+        return false;
+    }
+
+    @Override
+    public int getPositionSwipeDownView() {
+        return 0;
+    }
+
+    @Override
+    public boolean hasSwipeCallback() {
+        return false;
+    }
+
+    @Override
+    public boolean onShouldSwipe(int position) {
+        return false;
+    }
+
+    @Override
+    public float getMinFlingVelocity() {
+        return 0;
+    }
+
+    @Override
+    public float getMaxFlingVelocity() {
+        return 0;
+    }
+
+    @Override
+    public boolean isSwipeDirectionValid(float xVelocity) {
+        return false;
+    }
+
+    @Override
+    public View getSwipeDownView() {
+        return null;
+    }
+
+    @Override
+    public View getSwipeDownChild() {
+        return null;
+    }
+
+    @Override
+    public long getAnimationTime() {
+        return 0;
+    }
+
+    @Override
+    public boolean removeAnimation(View dismissView) {
+        return false;
+    }
+
+    @Override
+    public SortedSet<PendingDismissData> getPendingDismisses() {
+        return null;
+    }
+
+    @Override
+    public Undoable onDismiss(int position) {
+        return null;
+    }
+
+    @Override
+    public void addUndoAction(Undoable undoable) {
+
+    }
+
+    @Override
+    public void showUndoPopup(float yLocationOffset) {
+
+    }
+
+    @Override
+    public void clearPendingDismissed() {
+
+    }
+
+    @Override
+    public void addPendingDismiss(PendingDismissData pendingDismissData) {
+
+    }
+
+    @Override
+    public void discardUndo() {
+
+    }
+
+    @Override
+    public EnhancedListView enableSwipeToDismiss() {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView disableSwipeToDismiss() {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setDismissCallback(OnDismissCallback dismissCallback) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setUndoStyle(UndoStyle undoStyle) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setUndoHideDelay(int hideDelay) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setRequireTouchBeforeDismiss(boolean touchBeforeDismiss) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setSwipeDirection(SwipeDirection direction) {
+        return null;
+    }
+
+    @Override
+    public EnhancedListView setSwipingLayout(int swipingLayoutId) {
+        return null;
     }
 }

@@ -6,51 +6,24 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 public interface EnhancedList {
-    boolean isInEditMode();
 
-    void setSlop(float dimension);
+    void discardUndo();
 
-    void setMinFlingVelocity(int scaledMinimumFlingVelocity);
+    EnhancedListView enableSwipeToDismiss();
 
-    void setMaxFlingVelocity(int scaledMaximumFlingVelocity);
+    EnhancedListView disableSwipeToDismiss();
 
-    void setAnimationTime(int integer);
+    EnhancedListView setDismissCallback(OnDismissCallback dismissCallback);
 
-    void setUndoButton(Button undoButton);
+    EnhancedListView setShouldSwipeCallback(OnShouldSwipeCallback shouldSwipeCallback);
 
-    void incrementValidDelayedMsgId();
+    EnhancedListView setUndoStyle(UndoStyle undoStyle);
 
-    void setUndoPopupTextView(TextView undoPopup);
+    EnhancedListView setUndoHideDelay(int hideDelay);
 
-    void setUndoPopup(PopupWindow mUndoButton);
+    EnhancedListView setRequireTouchBeforeDismiss(boolean touchBeforeDismiss);
 
-    void setScreenDensity(float density);
+    EnhancedListView setSwipeDirection(SwipeDirection direction);
 
-    void setOnScrollListener(AbsListView.OnScrollListener onScrollListener);
-
-    void setSwipePaused(boolean b);
-
-    boolean hasUndoActions();
-
-    UndoStyle getUndoStyle();
-
-    void undoFirstAction();
-
-    void undoAll();
-
-    void undoLast();
-
-    boolean hasNoUndoActions();
-
-    boolean isUndoPopupShowing();
-
-    void dismissUndoPopup();
-
-    int undoActionsSize();
-
-    void setUndoPopupText(String msg);
-
-    String getTitleFromUndoAction(int i);
-
-    void setUndoButtonText(String msg);
+    EnhancedListView setSwipingLayout(int swipingLayoutId);
 }
