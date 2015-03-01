@@ -44,7 +44,6 @@ public class EnhancedListFlow {
             public boolean onTouch(View v, MotionEvent event) {
                 // If the user touches the screen invalidate the current running delay by incrementing
                 // the valid message id. So this delay won't hide the undo popup anymore
-                //mValidDelayedMsgId++;
                 enhancedList.incrementValidDelayedMsgId();
                 return false;
             }
@@ -67,7 +66,6 @@ public class EnhancedListFlow {
         return new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                //mSwipePaused = scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL;
                 enhancedList.setSwipePaused(scrollState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL);
             }
 
@@ -84,13 +82,11 @@ public class EnhancedListFlow {
      */
     public void changePopupText() {
         String msg = null;
-        //if (mUndoActions.size() > 1) {
         if (enhancedList.undoActionsSize() > 1) {
             msg = context.getResources().getString(R.string.elv_n_items_deleted, enhancedList.undoActionsSize());
         } else if (enhancedList.undoActionsSize() >= 1) {
             // Set title from single undoable or when no multiple deletion string
             // is given
-            //msg = mUndoActions.get(mUndoActions.size() - 1).getTitle();
             msg = enhancedList.getTitleFromUndoAction(enhancedList.undoActionsSize() - 1);
 
             if (msg == null) {
@@ -98,7 +94,6 @@ public class EnhancedListFlow {
             }
         }
         enhancedList.setUndoPopupText(msg);
-        //mUndoPopupTextView.setText(msg);
     }
 
     /**
@@ -112,6 +107,5 @@ public class EnhancedListFlow {
             msg = context.getResources().getString(R.string.elv_undo);
         }
         enhancedList.setUndoButtonText(msg);
-        //mUndoButton.setText(msg);
     }
 }

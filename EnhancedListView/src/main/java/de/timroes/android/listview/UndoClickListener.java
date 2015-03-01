@@ -19,43 +19,30 @@ class UndoClickListener implements View.OnClickListener {
      */
     @Override
     public void onClick(View v) {
-        //if (!mUndoActions.isEmpty()) {
         if (enhancedList.hasUndoActions()) {
             switch (enhancedList.getUndoStyle()) {
                 case SINGLE_POPUP:
                     enhancedList.undoFirstAction();
-                    //mUndoActions.get(0).undo();
-                    //mUndoActions.clear();
                     break;
                 case COLLAPSED_POPUP:
-                    //Collections.reverse(mUndoActions);
-                    //for (Undoable undo : mUndoActions) {
-                    //    undo.undo();
-                    //}
-                    //mUndoActions.clear();
                     enhancedList.undoAll();
                     break;
                 case MULTILEVEL_POPUP:
-                    //mUndoActions.get(mUndoActions.size() - 1).undo();
-                    //mUndoActions.remove(mUndoActions.size() - 1);
                     enhancedList.undoLast();
                     break;
             }
         }
 
         // Dismiss dialog or change text
-        //if (mUndoActions.isEmpty()) {
         if (enhancedList.hasNoUndoActions()) {
             if (enhancedList.isUndoPopupShowing()) {
                 enhancedList.dismissUndoPopup();
-                //mUndoPopup.dismiss();
             }
         } else {
             enhancedListFlow.changePopupText();
             enhancedListFlow.changeButtonLabel();
         }
-
-        //mValidDelayedMsgId++;
+        
         enhancedList.incrementValidDelayedMsgId();
     }
 

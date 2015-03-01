@@ -3,8 +3,8 @@ package de.timroes.android.listview;
 
 /**
  * Extend this abstract class and return it from
- * {@link EnhancedListView.OnDismissCallback#onDismiss(EnhancedListView, int)}
- * to let the user undo the deletion you've done with your {@link EnhancedListView.OnDismissCallback}.
+ * {@link OnDismissCallback#onDismiss(EnhancedListView, int)}
+ * to let the user undo the deletion you've done with your {@link OnDismissCallback}.
  * You have at least to implement the {@link #undo()} method, and can override {@link #discard()}
  * and {@link #getTitle()} to offer more functionality. See the README file for example implementations.
  */
@@ -12,7 +12,7 @@ public abstract class Undoable {
 
     /**
      * This method must undo the deletion you've done in
-     * {@link EnhancedListView.OnDismissCallback#onDismiss(EnhancedListView, int)} and reinsert
+     * {@link OnDismissCallback#onDismiss(EnhancedListView, int)} and reinsert
      * the element into the adapter.
      * <p>
      * In the most implementations, you will only remove the list item from your adapter
