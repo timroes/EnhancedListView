@@ -29,6 +29,10 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.AnimatorListenerAdapter;
+import com.nineoldandroids.view.ViewPropertyAnimator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -230,10 +234,10 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     /**
      * Enables the <i>Swipe to Dismiss</i> feature for this list. This allows users to swipe out
      * an list item element to delete it from the list. Every time the user swipes out an element
-     * {@link de.timroes.android.listview.OnDismissCallback#onDismiss(EnhancedListView, int)}
+     * {@link de.timroes.android.listview.OnDismissCallback#onDismiss(EnhancedList, int)}
      * of the given {@link de.timroes.android.listview.EnhancedListView} will be called. To enable
      * <i>undo</i> of the deletion, return an {@link de.timroes.android.listview.Undoable}
-     * from {@link de.timroes.android.listview.OnDismissCallback#onDismiss(EnhancedListView, int)}.
+     * from {@link de.timroes.android.listview.OnDismissCallback#onDismiss(EnhancedList, int)}.
      * Return {@code null}, if you don't want the <i>undo</i> feature enabled. Read the README file
      * or the demo project for more detailed samples.
      *
@@ -561,6 +565,16 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
     }
 
     @Override
+    public void animateSwipeBack(View swipeDownView, int animationTime) {
+        //Swipe back to regular position
+        com.nineoldandroids.view.ViewPropertyAnimator.animate(swipeDownView)
+                .translationX(0)
+                .alpha(1)
+                .setDuration(animationTime)
+                .setListener(null);
+    }
+
+    @Override
     protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility);
 
@@ -572,5 +586,19 @@ public class EnhancedListView extends ListView implements EnhancedListControl {
         if (visibility != View.VISIBLE) {
             discardUndo();
         }
+    }
+
+    @Override
+    public void animateSlideOut(final View view, int viewWidth, int animationTime, boolean toRightSide, final View childView, final int position) {
+        ViewPropertyAnimator.animate(view)
+                .translationX(toRightSide ? viewWidth : -viewWidth)
+                .alpha(0)
+                .setDuration(animationTime)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        enhancedListFlow.performDismiss(view, childView, position);
+                    }
+                });
     }
 }

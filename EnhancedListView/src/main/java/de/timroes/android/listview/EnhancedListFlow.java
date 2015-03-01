@@ -19,7 +19,6 @@ import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
 import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.view.ViewHelper;
-import com.nineoldandroids.view.ViewPropertyAnimator;
 
 public class EnhancedListFlow {
 
@@ -182,16 +181,7 @@ public class EnhancedListFlow {
      */
     public void slideOutView(final View view, final View childView, final int position, boolean toRightSide) {
         if (enhancedList.shouldPrepareAnimation(view)) {
-            ViewPropertyAnimator.animate(view)
-                    .translationX(toRightSide ? viewWidth : -viewWidth)
-                    .alpha(0)
-                    .setDuration(animationTime)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            performDismiss(view, childView, position);
-                        }
-                    });
+            enhancedList.animateSlideOut(view, viewWidth, animationTime, toRightSide, childView, position);
         }
     }
 
@@ -300,12 +290,7 @@ public class EnhancedListFlow {
                     // dismiss
                     enhancedList.slideOutView(swipeDownView, swipeDownChild, downPosition, dismissRight);
                 } else if (swiping) {
-                    // Swipe back to regular position
-                    ViewPropertyAnimator.animate(swipeDownView)
-                            .translationX(0)
-                            .alpha(1)
-                            .setDuration(animationTime)
-                            .setListener(null);
+                    enhancedList.animateSwipeBack(swipeDownView, animationTime);
                 }
                 velocityTracker = null;
                 downX = 0;

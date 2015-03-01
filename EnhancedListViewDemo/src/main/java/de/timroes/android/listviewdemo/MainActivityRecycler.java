@@ -301,12 +301,12 @@ public class MainActivityRecycler extends ActionBarActivity {
 
         public void remove(int position) {
             mItems.remove(position);
-            notifyDataSetChanged();
+            notifyItemRemoved(position);
         }
 
         public void insert(int position, String item) {
             mItems.add(position, item);
-            notifyDataSetChanged();
+            notifyItemInserted(position);
         }
 
         public Object getItem(int position) {

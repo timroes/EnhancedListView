@@ -14,6 +14,10 @@ import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.AnimatorListenerAdapter;
+import com.nineoldandroids.view.ViewPropertyAnimator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -52,9 +56,10 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
         super(context);
         enhancedListFlow.init(context, this);
 
-        this.setHasFixedSize(true);
+        this.setHasFixedSize(false);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
         this.setLayoutManager(linearLayoutManager);
+        this.setItemAnimator(null);
 
     }
 
@@ -62,18 +67,20 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
         super(context, attrs);
         enhancedListFlow.init(context, this);
 
-        this.setHasFixedSize(true);
+        this.setHasFixedSize(false);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
         this.setLayoutManager(linearLayoutManager);
+        this.setItemAnimator(null);
     }
 
     public EnhancedRecyclerListView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         enhancedListFlow.init(context, this);
 
-        this.setHasFixedSize(true);
+        this.setHasFixedSize(false);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
         this.setLayoutManager(linearLayoutManager);
+        this.setItemAnimator(null);
     }
 
     @Override
@@ -351,6 +358,31 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     }
 
     @Override
+    public void animateSwipeBack(View swipeDownView, int animationTime) {
+        //Swipe back to regular position
+        ViewPropertyAnimator.animate(swipeDownView)
+                .translationX(0)
+                .alpha(1)
+                .setDuration(animationTime)
+                .setListener(null);
+
+    }
+
+    @Override
+    public void animateSlideOut(final View view, int viewWidth, int animationTime, boolean toRightSide, final View childView, final int position) {
+        ViewPropertyAnimator.animate(view)
+                .translationX(toRightSide ? viewWidth : -viewWidth)
+                .alpha(0)
+                .setDuration(animationTime)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        enhancedListFlow.performDismiss(view, childView, position);
+                    }
+                });
+    }
+
+    @Override
     public void discardUndo() {
         enhancedListFlow.discardUndo();
     }
@@ -419,4 +451,5 @@ public class EnhancedRecyclerListView extends RecyclerView implements EnhancedLi
     public void delete(int position) {
         enhancedListFlow.delete(position);
     }
+
 }

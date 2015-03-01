@@ -107,4 +107,8 @@ public interface EnhancedListControl extends EnhancedList {
     boolean shouldPrepareAnimation(View view);
 
     int getWidth();
+
+    void animateSwipeBack(View swipeDownView, int animationTime);
+
+    void animateSlideOut(View view, int width, int viewWidth, boolean toRightSide, View childView, int animationTime);
 }
